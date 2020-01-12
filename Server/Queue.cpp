@@ -1,6 +1,6 @@
 #include "Queue.h"
 
-void add(queue* q, article value) {
+void addToQueue(queue* q, article value) {
 	queueNode* newNode = (queueNode*)malloc(sizeof(queueNode));
 	newNode->value = value;
 	newNode->next = NULL;
@@ -15,7 +15,7 @@ void add(queue* q, article value) {
 
 }
 
-article* remove(queue* q) {
+article* removeFromQueue(queue* q) {
 	if (q->first == NULL) {
 		printf("Queue is empty\n");
 		return NULL;

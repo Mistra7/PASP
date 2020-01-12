@@ -76,3 +76,8 @@ int checkIfExists(SocketNode** root, SOCKET s)
 	}
 	return 0;
 }
+
+SocketNode* getNext(SocketNode** root)
+{
+	return (*root)->next;
+}

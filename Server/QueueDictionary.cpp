@@ -46,13 +46,13 @@ void enqueue(char key, article value)
 	struct nlist2* np;
 	if ((np = lookup2(key)) == NULL)
 		np = install2(key);
-	add(np->articleQueue, value);
+	addToQueue(np->articleQueue, value);
 }
 
 article* dequeue(char key, article value)
 {
 	struct nlist2* np;
 	if ((np = lookup2(key)) != NULL)
-		return remove((np->articleQueue));
+		return removeFromQueue((np->articleQueue));
 	return NULL;
 }

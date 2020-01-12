@@ -1,21 +1,20 @@
 #pragma comment(lib, "Ws2_32.lib")
-#include <ws2tcpip.h>
-#include <Windows.h>
-//funkcije su add i remove
-#include "Dictionary.h"
-//funkcije su enqueue i dequeue
-#include "QueueDictionary.h"
-#include "Queue.h"
+#include "PublisherThread.h"
+#include "SubscriberThread.h"
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27016"
+#define DEFAULT_PORT "20000"
+#define DEFAULT_PORT2 "20001"
 
 bool InitializeWindowsSockets();
 
 int main()
 {
 	// Socket used for listening for new clients 
-	SOCKET listenSocket = INVALID_SOCKET;
+	//soket za slusanje pablisera
+	SOCKET listenForPublishersSocket = INVALID_SOCKET;
+	//soket za slusanje sabskrajbera
+	SOCKET listenForSubscribersSocket = INVALID_SOCKET;
 	// Socket used for communication with client
 	SOCKET acceptedSocket = INVALID_SOCKET;
 	// variable used to store function return value
@@ -32,6 +31,7 @@ int main()
 
 	// Prepare address information structures
 	addrinfo* resultingAddress = NULL;
+	addrinfo* resultingAddress2 = NULL;
 	addrinfo hints;
 
 	memset(&hints, 0, sizeof(hints));
@@ -50,11 +50,11 @@ int main()
 	}
 
 	// Create a SOCKET for connecting to server
-	listenSocket = socket(AF_INET,      // IPv4 address famly
+	listenForPublishersSocket = socket(AF_INET,      // IPv4 address famly
 		SOCK_STREAM,  // stream socket
 		IPPROTO_TCP); // TCP
 
-	if (listenSocket == INVALID_SOCKET)
+	if (listenForPublishersSocket == INVALID_SOCKET)
 	{
 		printf("socket failed with error: %ld\n", WSAGetLastError());
 		freeaddrinfo(resultingAddress);
@@ -64,12 +64,12 @@ int main()
 
 	// Setup the TCP listening socket - bind port number and local address 
 	// to socket
-	iResult = bind(listenSocket, resultingAddress->ai_addr, (int)resultingAddress->ai_addrlen);
+	iResult = bind(listenForPublishersSocket, resultingAddress->ai_addr, (int)resultingAddress->ai_addrlen);
 	if (iResult == SOCKET_ERROR)
 	{
 		printf("bind failed with error: %d\n", WSAGetLastError());
 		freeaddrinfo(resultingAddress);
-		closesocket(listenSocket);
+		closesocket(listenForPublishersSocket);
 		WSACleanup();
 		return 1;
 	}
@@ -77,57 +77,162 @@ int main()
 	// Since we don't need resultingAddress any more, free it
 	freeaddrinfo(resultingAddress);
 
-	// Set listenSocket in listening mode
-	iResult = listen(listenSocket, SOMAXCONN);
-	if (iResult == SOCKET_ERROR)
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;       // IPv4 address
+	hints.ai_socktype = SOCK_STREAM; // Provide reliable data streaming
+	hints.ai_protocol = IPPROTO_TCP; // Use TCP protocol
+	hints.ai_flags = AI_PASSIVE;     // 
+
+	// Resolve the server address and port
+	iResult = getaddrinfo(NULL, DEFAULT_PORT2, &hints, &resultingAddress2);
+	if (iResult != 0)
 	{
-		printf("listen failed with error: %d\n", WSAGetLastError());
-		closesocket(listenSocket);
+		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
 		return 1;
 	}
 
+	listenForSubscribersSocket = socket(AF_INET,      // IPv4 address famly
+		SOCK_STREAM,  // stream socket
+		IPPROTO_TCP); // TCP
+
+	if (listenForSubscribersSocket == INVALID_SOCKET)
+	{
+		printf("socket failed with error: %ld\n", WSAGetLastError());
+		freeaddrinfo(resultingAddress2);
+		WSACleanup();
+		return 1;
+	}
+
+	iResult = bind(listenForSubscribersSocket, resultingAddress2->ai_addr, (int)resultingAddress2->ai_addrlen);
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("bind failed with error: %d\n", WSAGetLastError());
+		freeaddrinfo(resultingAddress2);
+		closesocket(listenForPublishersSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	// Since we don't need resultingAddress any more, free it
+	freeaddrinfo(resultingAddress2);
+
+	unsigned long int nonBlockingMode = 1;
+	iResult = ioctlsocket(listenForPublishersSocket, FIONBIO, &nonBlockingMode);
+
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("ioctlsocket failed with error: %ld\n", WSAGetLastError());
+		return -1;
+	}
+
+	iResult = ioctlsocket(listenForSubscribersSocket, FIONBIO, &nonBlockingMode);
+
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("ioctlsocket failed with error: %ld\n", WSAGetLastError());
+		return -1;
+	}
+
 	printf("Server initialized, waiting for clients.\n");
+
+	// Set listenSocket in listening mode
+	iResult = listen(listenForPublishersSocket, SOMAXCONN);
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("listen failed with error: %d\n", WSAGetLastError());
+		closesocket(listenForPublishersSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	// Set listenSocket in listening mode
+	iResult = listen(listenForSubscribersSocket, SOMAXCONN);
+	if (iResult == SOCKET_ERROR)
+	{
+		printf("listen failed with error: %d\n", WSAGetLastError());
+		closesocket(listenForSubscribersSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	FD_SET set;
+	timeval timeVal;
 
 	do
 	{
-		// Wait for clients and accept client connections.
-		// Returning value is acceptedSocket used for further
-		// Client<->Server communication. This version of
-		// server will handle only one client.
-		acceptedSocket = accept(listenSocket, NULL, NULL);
-
-		if (acceptedSocket == INVALID_SOCKET)
+		timeVal.tv_sec = 0;
+		timeVal.tv_usec = 0;
+		FD_ZERO(&set);
+		FD_SET(listenForPublishersSocket, &set);
+		iResult = select(0, &set, NULL, NULL, &timeVal);
+			//listen(listenForPublishersSocket, SOMAXCONN);
+		if (iResult > 0)
 		{
-			printf("accept failed with error: %d\n", WSAGetLastError());
-			closesocket(listenSocket);
-			WSACleanup();
-			return 1;
-		}
+			acceptedSocket = accept(listenForPublishersSocket, NULL, NULL);
 
-		do
-		{
-			// Receive data until the client shuts down the connection
-			iResult = recv(acceptedSocket, recvbuf, DEFAULT_BUFLEN, 0);
-			if (iResult > 0)
+			if (acceptedSocket == INVALID_SOCKET)
 			{
-				printf("Message received from client: %s.\n", recvbuf);
-			}
-			else if (iResult == 0)
-			{
-				// connection was closed gracefully
-				printf("Connection with client closed.\n");
-				closesocket(acceptedSocket);
+				printf("accept failed with error: %d\n", WSAGetLastError());
+				closesocket(listenForPublishersSocket);
+				WSACleanup();
 			}
 			else
 			{
-				// there was an error during recv
-				printf("recv failed with error: %d\n", WSAGetLastError());
-				closesocket(acceptedSocket);
+				//addSocket(&publisherRoot, acceptedSocket);
 			}
-		} while (iResult > 0);
+		}
 
-		// here is where server shutdown loguc could be placed
+		timeVal.tv_sec = 0;
+		timeVal.tv_usec = 0;
+
+		FD_ZERO(&set);
+		FD_SET(listenForSubscribersSocket, &set);
+		iResult = select(0, &set, NULL, NULL, &timeVal);
+
+		if (iResult > 0)
+		{
+			acceptedSocket = accept(listenForSubscribersSocket, NULL, NULL);
+
+			if (acceptedSocket == INVALID_SOCKET)
+			{
+				printf("accept failed with error: %d\n", WSAGetLastError());
+				closesocket(listenForSubscribersSocket);
+				WSACleanup();
+			}
+			else
+			{
+				while (true)
+				{
+					FD_ZERO(&set);
+					FD_SET(acceptedSocket, &set);
+
+					timeVal.tv_sec = 0;
+					timeVal.tv_usec = 0;
+
+					iResult = select(0, &set, NULL, NULL, &timeVal);
+					if (iResult == SOCKET_ERROR)
+					{
+						printf("Select failed with error: %d", WSAGetLastError());
+						break;
+					}
+
+					if (iResult == 0)
+					{
+						Sleep(10);
+						continue;
+					}
+
+					iResult = recv(acceptedSocket, recvbuf, DEFAULT_BUFLEN, 0);
+					if (iResult > 0)
+					{
+						add(recvbuf[0], acceptedSocket);
+						break;
+					}
+				}
+				
+			}
+		}
 
 	} while (1);
 
@@ -142,11 +247,10 @@ int main()
 	}
 
 	// cleanup
-	closesocket(listenSocket);
+	closesocket(listenForPublishersSocket);
 	closesocket(acceptedSocket);
 	WSACleanup();
 
-	return 0;
 
 	return 0;
 }
