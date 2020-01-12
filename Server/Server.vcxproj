@@ -125,10 +125,14 @@
   <ItemGroup>
     <ClInclude Include="Dictionary.h" />
     <ClInclude Include="Queue.h" />
+    <ClInclude Include="QueueDictionary.h" />
     <ClInclude Include="SocketList.h" />
+    <ClInclude Include="Structs.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DIctionary.cpp" />
+    <ClCompile Include="Queue.cpp" />
+    <ClCompile Include="QueueDictionary.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="SocketList.cpp" />
   </ItemGroup>
