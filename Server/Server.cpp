@@ -8,7 +8,8 @@
 #include "Queue.h"
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27016"
+#define DEFAULT_PORT "20000"
+#define SERVER_SLEEP_TIME 50
 
 bool InitializeWindowsSockets();
 
@@ -145,8 +146,6 @@ int main()
 	closesocket(listenSocket);
 	closesocket(acceptedSocket);
 	WSACleanup();
-
-	return 0;
 
 	return 0;
 }
