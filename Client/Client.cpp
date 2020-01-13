@@ -13,23 +13,35 @@
 #define SERVER_SLEEP_TIME 50
 #define TEXT_LEN 100
 
+enum user_type{PUBLISHER, SUBSCRIBER};
+
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
+
+void Select(SOCKET);
+
+void SendMessage(SOCKET, char*, int);
+
+int SubscriberMenu();
+
+void SubToTopic(char*, int*);
+
+void ToContinue();
+
+int c; // for clearing the stdin buffer
 
 int __cdecl main(int argc, char** argv)
 {
     // socket used to communicate with server
     SOCKET connectSocket = INVALID_SOCKET;
-    // variable used to store function return value
-    int iResult;
     // message to send
     char messageToSend[DEFAULT_BUFLEN] = "";
     //char text[TEXT_LEN];
-    int user_type;
+    user_type type;
     u_short port;
 
-    int c; // for clearing the stdin buffer
+    bool exit = false;
 
     // Validate the parameters
     if (argc != 2)
@@ -49,11 +61,11 @@ int __cdecl main(int argc, char** argv)
         system("cls");
         printf("0 - PUBLISHER\t1 - SUBSCRIBER\n");
         printf("Choose user type: ");
-        scanf_s("%d", &user_type);
+        scanf_s("%d", &type);
         while ((c = getchar()) != '\n' && c != EOF) {}
-    } while (user_type != 0 && user_type != 1);
+    } while (type != 0 && type != 1);
 
-    if (user_type == 0) {
+    if (type == PUBLISHER) {
         port = DEFAULT_PORT;
     }
     else {
@@ -69,6 +81,7 @@ int __cdecl main(int argc, char** argv)
     {
         printf("socket failed with error: %ld\n", WSAGetLastError());
         WSACleanup();
+        ToContinue();
         return 1;
     }
 
@@ -76,39 +89,55 @@ int __cdecl main(int argc, char** argv)
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     inet_pton(serverAddress.sin_family, argv[1], &serverAddress.sin_addr.s_addr);
-    serverAddress.sin_port = htons(DEFAULT_PORT);
+    serverAddress.sin_port = htons(port);
     // connect to server specified in serverAddress and socket connectSocket
     if (connect(connectSocket, (SOCKADDR*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR)
     {
         printf("Unable to connect to server.\n");
         closesocket(connectSocket);
         WSACleanup();
+        ToContinue();
+        return 1;
     }
 
     while (1) {
-        //Select(connectSocket);
+        int message_length = 0;
+
+        if (type == PUBLISHER) {
+
+        }
+        else if (type == SUBSCRIBER) {
+            switch (SubscriberMenu())
+            {
+            case 1: SubToTopic(messageToSend, &message_length);
+                break;
+            case 2:
+                break;
+            case 3: exit = true;
+                break;
+            default:
+                break;
+            }
+        }
+
+        if (exit) {
+            break;
+        }
+       
         // Send an prepared message with null terminator included
-        printf("Enter message to send: ");
+        /*printf("Enter message to send: ");
         scanf_s("%[^\n]", messageToSend, DEFAULT_BUFLEN);
-        while ((c = getchar()) != '\n' && c != EOF) {}
+        while ((c = getchar()) != '\n' && c != EOF) {}*/
 
         /*messageToSend = (char*)malloc(strlen(text) + 1);
         memcpy(messageToSend, text, strlen(text) + 1);*/
-        if (strcmp(messageToSend, "STOP") == 0) {
+        /*if (strcmp(messageToSend, "STOP") == 0) {
             break;
+        }*/
+        if (message_length > 0) {
+            SendMessage(connectSocket, messageToSend, message_length);
         }
-
-        iResult = send(connectSocket, messageToSend, (int)strlen(messageToSend) + 1, 0);
-
-        if (iResult == SOCKET_ERROR)
-        {
-            printf("send failed with error: %d\n", WSAGetLastError());
-            closesocket(connectSocket);
-            WSACleanup();
-            return 1;
-        }
-
-        printf("Bytes Sent: %ld\n", iResult);
+        
     }
     
     //getchar();
@@ -165,4 +194,66 @@ void Select(SOCKET socket) {
             continue;
         }
     } while (iResult != 1);
+}
+
+void SendMessage(SOCKET socket, char* messageToSend, int length)
+{
+    // variable used to store function return value
+    int iResult;
+
+    Select(socket);
+
+    iResult = send(socket, messageToSend, length, 0);
+
+    if (iResult == SOCKET_ERROR)
+    {
+        printf("send failed with error: %d\n", WSAGetLastError());
+        closesocket(socket);
+        WSACleanup();
+        ToContinue();
+        exit(1);
+    }
+
+    printf("Bytes Sent: %ld\n", iResult);
+    ToContinue();
+}
+
+int SubscriberMenu() {
+    int option;
+
+    do {
+        system("cls");
+        printf("1. Subscribe to a topic\n");
+        printf("2. Read posts\n");
+        printf("3. Exit\n");
+
+        printf("Choose an option: ");
+        scanf_s("%d", &option);
+        while ((c = getchar()) != '\n' && c != EOF) {}
+    } while (option < 1 || option > 3);
+
+    return option;
+}
+
+void SubToTopic(char* messageToSend, int* length) {
+    char topic;
+    do {
+        system("cls");
+        printf("1 - GAMING\t");
+        printf("2 - TECHNOLOGY\t");
+        printf("3 - MEMES\t");
+        printf("4 - CELEBRITIES\t");
+        printf("5 - SPORT\n");
+
+        printf("Choose a topic: ");
+        topic = getchar();
+        while ((c = getchar()) != '\n' && c != EOF) {}
+    } while (topic < '1' || topic > '5');
+    
+    messageToSend[(*length)++] = topic; 
+}
+
+void ToContinue() {
+    printf("Press ENTER key to continue...");
+    c = getchar();
 }

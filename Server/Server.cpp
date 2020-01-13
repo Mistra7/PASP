@@ -227,6 +227,7 @@ int main()
 					iResult = recv(acceptedSocket, recvbuf, DEFAULT_BUFLEN, 0);
 					if (iResult > 0)
 					{
+						printf("%c\n", recvbuf[0]);
 						add(recvbuf[0], acceptedSocket);
 						break;
 					}
