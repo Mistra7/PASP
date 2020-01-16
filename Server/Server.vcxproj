@@ -124,20 +124,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Dictionary.h" />
-    <ClInclude Include="PublisherThread.h" />
     <ClInclude Include="Queue.h" />
     <ClInclude Include="QueueDictionary.h" />
     <ClInclude Include="SocketList.h" />
-    <ClInclude Include="SubscriberThread.h" />
+    <ClInclude Include="Threads.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DIctionary.cpp" />
-    <ClCompile Include="PublisherThread.cpp" />
     <ClCompile Include="Queue.cpp" />
     <ClCompile Include="QueueDictionary.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="SocketList.cpp" />
-    <ClCompile Include="SubscriberThread.cpp" />
+    <ClCompile Include="Threads.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

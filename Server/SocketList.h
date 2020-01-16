@@ -12,3 +12,4 @@ void addSocket(SocketNode** root, SOCKET s);
 void deleteSocket(SocketNode** root, SOCKET s);
 int checkIfExists(SocketNode** root, SOCKET s);
 SocketNode* getNext(SocketNode** root);
+void deleteList(SocketNode** root);

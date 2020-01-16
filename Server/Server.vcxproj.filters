@@ -27,10 +27,7 @@
     <ClInclude Include="QueueDictionary.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublisherThread.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SubscriberThread.h">
+    <ClInclude Include="Threads.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,10 +47,7 @@
     <ClCompile Include="Queue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PublisherThread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SubscriberThread.cpp">
+    <ClCompile Include="Threads.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

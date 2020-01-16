@@ -17,3 +17,4 @@ struct nlist* lookup(char s);
 struct nlist* install(char key);
 void add(char key, SOCKET value);
 void removeValue(char key, SOCKET value);
+SocketNode* getAllSockets(char key);
