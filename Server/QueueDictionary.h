@@ -14,6 +14,7 @@ struct nlist2 {
 
 static struct nlist2* hashTab2[HASHSIZE2];
 
+#pragma region funkcije za rad sa rjecnikom
 //stvaranje hash vrijednosti
 unsigned hash2(char s);
 //gleda da li za zadatu vrijednost postoji  key, value par u rjecniku
@@ -24,4 +25,5 @@ struct nlist2* install2(char key);
 void enqueue(char key, article value);
 //vraca prvi clan reda i oslobadja njegovu memoriju, ako je red prazan, vraca NULL
 article* dequeue(char key);
+#pragma endregion funkcije za rad sa rjecnikom
 #pragma once

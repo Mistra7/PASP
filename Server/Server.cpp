@@ -19,6 +19,8 @@ int main()
 		// by InitializeWindowsSockets() function
 		return 1;
 	}
+
+#pragma region inicijalizacija semafora i kriticnih sekcija
 	InitializeCriticalSection(&stopWorkCS);
 	InitializeCriticalSection(&pubList);
 	sems[0] = CreateSemaphore(0, 0, 5, NULL);
@@ -31,6 +33,7 @@ int main()
 		InitializeCriticalSection(&qDictionary[i]);
 		
 	}
+#pragma endregion inicijalizacija semafora i kriticnih sekcija
 
 	DWORD listenPublishersID, listenSubscribresID;
 	DWORD helpPublishersID;

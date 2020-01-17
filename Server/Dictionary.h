@@ -11,6 +11,8 @@ struct nlist {
 };
 
 static struct nlist* hashTab[HASHSIZE];
+
+#pragma region funkcije za rad sa rjecnikom
 //stvaranje hash vrijednosti
 unsigned hash(char s);
 //gleda da li za zadatu vrijednost postoji key, value par u rjecniku
@@ -23,3 +25,4 @@ void add(char key, SOCKET value);
 void removeValue(char key, SOCKET value);
 //vraca listu 
 SocketNode* getAllSockets(char key);
+#pragma endregion funkcije za rad sa rjecnikom
