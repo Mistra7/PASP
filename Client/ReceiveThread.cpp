@@ -3,7 +3,7 @@
 DWORD WINAPI receive(LPVOID lpParam) {
     WaitForSingleObject(hEnableReceive, INFINITE);
 
-    /*SOCKET socket = *(SOCKET*)lpParam;
+    SOCKET socket = *(SOCKET*)lpParam;
     int iResult;
     char recvbuf[DEFAULT_BUFLEN] = "";
 
@@ -14,7 +14,11 @@ DWORD WINAPI receive(LPVOID lpParam) {
         iResult = recv(socket, recvbuf, DEFAULT_BUFLEN, 0);
         if (iResult > 0)
         {
-            printf("Message received from client: %s.\n", recvbuf);
+            article* post = (article*)recvbuf;
+
+            EnterCriticalSection(&cs);
+            AddToList(&subbedTopics, post, sizeof(article));
+            LeaveCriticalSection(&cs);
         }
         else if (iResult == 0)
         {
@@ -30,7 +34,7 @@ DWORD WINAPI receive(LPVOID lpParam) {
             closesocket(socket);
             break;
         }
-    }*/
+    }
 
     return 0;
 }

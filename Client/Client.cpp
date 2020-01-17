@@ -3,7 +3,6 @@
 
 #include <ws2tcpip.h>
 #include "ReceiveThread.h"
-#include "../Common/List.h"
 
 #define DEFAULT_PORT 20000
 #define TEXT_LEN 100
@@ -23,6 +22,10 @@ int SubscriberMenu();
 void SubToTopic(char*, int*);
 
 bool isSubbed(char, int);
+
+void DisplayPosts();
+
+void printArticle(article);
 
 void ToContinue();
 
@@ -124,7 +127,9 @@ int __cdecl main(int argc, char** argv)
             {
             case 1: SubToTopic(messageToSend, &message_length);
                 break;
-            case 2:
+            case 2: EnterCriticalSection(&cs);
+                DisplayPosts();
+                LeaveCriticalSection(&cs);
                 break;
             case 3: exit = true;
                 break;
@@ -161,7 +166,10 @@ int __cdecl main(int argc, char** argv)
 }
 
 void ShutdownClient(SOCKET socket, HANDLE hThread) {
+    EnterCriticalSection(&cs);
     ClearList(&subbedTopics);
+    LeaveCriticalSection(&cs);
+
     CloseHandle(hThread);
     CloseHandle(hEnableReceive);
     DeleteCriticalSection(&cs);
@@ -207,6 +215,9 @@ int SubscriberMenu() {
 
     do {
         system("cls");
+        EnterCriticalSection(&cs);
+        printf("Posts not viewed: %d\n\n", Count(subbedTopics));
+        LeaveCriticalSection(&cs);
         printf("1. Subscribe to a topic\n");
         printf("2. Read posts\n");
         printf("3. Exit\n");
@@ -274,4 +285,42 @@ bool isSubbed(char topic, int topics_subbed) {
     }
 
     return subbed;
+}
+
+void DisplayPosts() {
+    int postCnt = Count(subbedTopics);
+
+    if (postCnt == 0) {
+        printf("No new posts have been received\n");
+    }
+    else {
+        for (int i = 0; i < postCnt; i++)
+        {
+            printArticle(*(article*)ElementAt(subbedTopics, i));
+            printf("---------------------------------------------");
+        }
+        ClearList(&subbedTopics);
+    }
+    ToContinue();
+}
+
+void printArticle(article post) {
+    switch (post.topic)
+    {
+    case ('1'): printf("GAMING\n");
+        break;
+    case ('2'): printf("TECHNOLOGY\n");
+        break;
+    case ('3'): printf("MEMES\n");
+        break;
+    case ('4'): printf("CELEBRITIES\n");
+        break;
+    case ('5'): printf("SPORT\n");
+        break;
+    default:
+        break;
+    }
+
+    printf("%s\n", post.text);
+    printf("by %s\n", post.authorName);
 }
