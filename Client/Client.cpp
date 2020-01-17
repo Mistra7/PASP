@@ -1,25 +1,22 @@
 #pragma comment(lib, "Ws2_32.lib")
 #define WIN32_LEAN_AND_MEAN
 
-#include <winsock2.h>
 #include <ws2tcpip.h>
-#include <conio.h>
 #include "List.h"
+#include "ReceiveThread.h"
 
-#define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT 20000
-#define SERVER_SLEEP_TIME 50
 #define TEXT_LEN 100
 
 enum user_type{PUBLISHER, SUBSCRIBER};
+
+void ShutdownClient(SOCKET, HANDLE);
 
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
 
-void Select(SOCKET);
-
-void SendMessage(SOCKET, char*, int);
+void SendMessage(SOCKET, char*, int, HANDLE);
 
 int SubscriberMenu();
 
@@ -33,6 +30,9 @@ int c; // za ciscenje stdin buffer-a
 
 node* subbedTopics = NULL; // teme na koje je korisnik pretplacen (ne koristi se za publisher-e)
 
+CRITICAL_SECTION cs;
+HANDLE hEnableReceive;
+
 int __cdecl main(int argc, char** argv)
 {
     // socket used to communicate with server
@@ -42,6 +42,9 @@ int __cdecl main(int argc, char** argv)
     //char text[TEXT_LEN];
     user_type type;
     u_short port;
+
+    DWORD receiveID;
+    HANDLE hReceive;
 
     bool exit = false;
 
@@ -101,6 +104,15 @@ int __cdecl main(int argc, char** argv)
         return 1;
     }
 
+
+    hReceive = CreateThread(NULL, 0, &receive, &connectSocket, 0, &receiveID);
+    hEnableReceive = CreateSemaphore(NULL, 0, 1, NULL);
+    InitializeCriticalSection(&cs);
+
+    if (type == SUBSCRIBER) {
+        ReleaseSemaphore(hEnableReceive, 1, NULL);
+    }
+
     while (1) {
         int message_length = 0;
 
@@ -136,18 +148,25 @@ int __cdecl main(int argc, char** argv)
             break;
         }*/
         if (message_length > 0) {
-            SendMessage(connectSocket, messageToSend, message_length);
+            SendMessage(connectSocket, messageToSend, message_length, hReceive);
         }
         
     }
     
     //getchar();
     // cleanup
-    ClearList(&subbedTopics);
-    closesocket(connectSocket);
-    WSACleanup();
+    ShutdownClient(connectSocket, hReceive);
 
     return 0;
+}
+
+void ShutdownClient(SOCKET socket, HANDLE hThread) {
+    ClearList(&subbedTopics);
+    CloseHandle(hThread);
+    CloseHandle(hEnableReceive);
+    DeleteCriticalSection(&cs);
+    closesocket(socket);
+    WSACleanup();
 }
 
 bool InitializeWindowsSockets()
@@ -162,57 +181,19 @@ bool InitializeWindowsSockets()
     return true;
 }
 
-void Select(SOCKET socket) {
-    // Initialize select parameters
-    FD_SET set;
-    timeval timeVal;
-
-    // Set timeouts to zero since we want select to return
-    // instantaneously
-    timeVal.tv_sec = 0;
-    timeVal.tv_usec = 0;
-
-    int iResult;
-
-    do {
-        FD_ZERO(&set);
-        // Add socket we will wait to read from
-        FD_SET(socket, &set);
-
-        iResult = select(0, NULL, &set, NULL, &timeVal);
-
-        // lets check if there was an error during select
-        if (iResult == SOCKET_ERROR)
-        {
-            fprintf(stderr, "select failed with error: %ld\n", WSAGetLastError());
-            continue;
-        }
-
-        // now, lets check if there are any sockets ready
-        if (iResult == 0)
-        {
-            // there are no ready sockets, sleep for a while and check again
-            Sleep(SERVER_SLEEP_TIME);
-            continue;
-        }
-    } while (iResult != 1);
-}
-
-void SendMessage(SOCKET socket, char* messageToSend, int length)
+void SendMessage(SOCKET socket, char* messageToSend, int length, HANDLE hThread)
 {
     // variable used to store function return value
     int iResult;
 
-    Select(socket);
+    Select(socket, true);
 
     iResult = send(socket, messageToSend, length, 0);
 
     if (iResult == SOCKET_ERROR)
     {
         printf("send failed with error: %d\n", WSAGetLastError());
-        ClearList(&subbedTopics);
-        closesocket(socket);
-        WSACleanup();
+        ShutdownClient(socket, hThread);
         ToContinue();
         exit(1);
     }
