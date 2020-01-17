@@ -2,8 +2,8 @@
 #define WIN32_LEAN_AND_MEAN
 
 #include <ws2tcpip.h>
-#include "List.h"
 #include "ReceiveThread.h"
+#include "../Common/List.h"
 
 #define DEFAULT_PORT 20000
 #define TEXT_LEN 100
