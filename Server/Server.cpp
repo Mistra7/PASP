@@ -8,7 +8,7 @@
 
 bool InitializeWindowsSockets();
 int stopWork = 0;
-CRITICAL_SECTION stopWorkCS;
+CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
 HANDLE sems[6];
 
 int main()
@@ -20,9 +20,16 @@ int main()
 		return 1;
 	}
 	InitializeCriticalSection(&stopWorkCS);
-	for (int i = 0; i < 6; i++)
+	InitializeCriticalSection(&pubList);
+	sems[0] = CreateSemaphore(0, 0, 5, NULL);
+	
+	for (int i = 0; i < 5; i++)
 	{
-		sems[i] = CreateSemaphore(0, 0, INFINITE, NULL);
+		sems[i + 1] = CreateSemaphore(0, 0, 150000, NULL);
+
+		InitializeCriticalSection(&lDictionary[i]);
+		InitializeCriticalSection(&qDictionary[i]);
+		
 	}
 
 	DWORD listenPublishersID, listenSubscribresID;
@@ -49,18 +56,28 @@ int main()
 	subSport = CreateThread(NULL, 0, &helpSubscribers, &tema5, 0, &subSportID);
 
 	HANDLE array[14] = { listenPublishers, listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport, sems[0], sems[1], sems[2], sems[3], sems[4], sems[5] };
-
+	HANDLE array2[8] = { listenPublishers, listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport };
+	Sleep(100);
+	printf("\n\t\tPress any key to leave\n");
 	char lit = getchar();
 	EnterCriticalSection(&stopWorkCS);
 	stopWork = 1;
 	LeaveCriticalSection(&stopWorkCS);
-	WaitForMultipleObjects(13, array, true, INFINITE);
+	ReleaseSemaphore(sems[0], 5, NULL);
+	WaitForMultipleObjects(8, array2, true, INFINITE);
 
 	for (int i = 0; i < 14; i++)
 	{
 		CloseHandle(array[i]);
+		if (i < 5)
+		{
+			DeleteCriticalSection(&lDictionary[i]);
+			DeleteCriticalSection(&qDictionary[i]);
+		}
 	}
 	DeleteCriticalSection(&stopWorkCS);
+	DeleteCriticalSection(&pubList);
+
 	WSACleanup();
 
 	return 0;

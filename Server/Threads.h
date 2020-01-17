@@ -10,7 +10,13 @@
 extern int stopWork;
 //semafori, 5, po jedan za svaki red
 extern HANDLE sems[6];
-extern CRITICAL_SECTION stopWorkCS;
+extern CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
+
+//funkcija zaduzena za sigurno vadjenje iz reda
+article* criticalDequeue(char tema);
+
+//funkcija zaduzena za sigurno preuzimanje sledeceg elemnta iz liste
+SocketNode* criticalNext(SocketNode* head, char tema);
 
 //ova funkcija je zaduzena za "slusanje" sabskrajbera, kreiranje soketa, primanje prve teme i smjestanje soketa u odgovarajucu listu
 //soketa na osnovu teme

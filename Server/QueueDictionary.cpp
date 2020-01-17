@@ -49,7 +49,7 @@ void enqueue(char key, article value)
 	addToQueue(np->articleQueue, value);
 }
 
-article* dequeue(char key, article value)
+article* dequeue(char key)
 {
 	struct nlist2* np;
 	if ((np = lookup2(key)) != NULL)

@@ -18,6 +18,9 @@ struct queue {
 	struct queueNode* last;
 };
 
+//dodajemo clanak u red
 void addToQueue(queue* q, article value);
+//vadimo clanak iz reda i oslobadajmo njegovu memoriju
 article* removeFromQueue(queue* q);
+//inicijalizacija reda
 void InitQ(queue* q);
