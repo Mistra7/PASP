@@ -354,9 +354,10 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 				}
 				else
 				{
-					EnterCriticalSection(&lDictionary[re[0] + 1]);
-					add(re[0], current->clientSocket);
-					LeaveCriticalSection(&lDictionary[re[0] + 1]);
+					int n = atoi(re);
+					EnterCriticalSection(&lDictionary[n + 1]);
+					add(n, current->clientSocket);
+					LeaveCriticalSection(&lDictionary[n + 1]);
 				}
 			}
 		}
