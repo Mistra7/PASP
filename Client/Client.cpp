@@ -1,12 +1,10 @@
 #pragma comment(lib, "Ws2_32.lib")
 #define WIN32_LEAN_AND_MEAN
 
-#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <conio.h>
+#include "List.h"
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT 20000
@@ -27,9 +25,13 @@ int SubscriberMenu();
 
 void SubToTopic(char*, int*);
 
+bool isSubbed(char, int);
+
 void ToContinue();
 
-int c; // for clearing the stdin buffer
+int c; // za ciscenje stdin buffer-a
+
+node* subbedTopics = NULL; // teme na koje je korisnik pretplacen (ne koristi se za publisher-e)
 
 int __cdecl main(int argc, char** argv)
 {
@@ -95,7 +97,6 @@ int __cdecl main(int argc, char** argv)
     {
         printf("Unable to connect to server.\n");
         closesocket(connectSocket);
-        WSACleanup();
         ToContinue();
         return 1;
     }
@@ -142,6 +143,7 @@ int __cdecl main(int argc, char** argv)
     
     //getchar();
     // cleanup
+    ClearList(&subbedTopics);
     closesocket(connectSocket);
     WSACleanup();
 
@@ -208,6 +210,7 @@ void SendMessage(SOCKET socket, char* messageToSend, int length)
     if (iResult == SOCKET_ERROR)
     {
         printf("send failed with error: %d\n", WSAGetLastError());
+        ClearList(&subbedTopics);
         closesocket(socket);
         WSACleanup();
         ToContinue();
@@ -237,23 +240,57 @@ int SubscriberMenu() {
 
 void SubToTopic(char* messageToSend, int* length) {
     char topic;
-    do {
-        system("cls");
-        printf("1 - GAMING\t");
-        printf("2 - TECHNOLOGY\t");
-        printf("3 - MEMES\t");
-        printf("4 - CELEBRITIES\t");
-        printf("5 - SPORT\n");
+    int topics_subbed = Count(subbedTopics);
+    if (topics_subbed != 5) {
+        do {
+            system("cls");
+            printf("1 - GAMING\t");
+            printf("2 - TECHNOLOGY\t");
+            printf("3 - MEMES\t");
+            printf("4 - CELEBRITIES\t");
+            printf("5 - SPORT\n");
 
-        printf("Choose a topic: ");
-        topic = getchar();
-        while ((c = getchar()) != '\n' && c != EOF) {}
-    } while (topic < '1' || topic > '5');
+            printf("Choose a topic: ");
+            topic = getchar();
+            while ((c = getchar()) != '\n' && c != EOF) {}
+        } while (topic < '1' || topic > '5');
+
+        if (isSubbed(topic, topics_subbed)) {
+            printf("Already subscribed to topic\n");
+            ToContinue();
+        }
+        else {
+            AddToList(&subbedTopics, &topic, sizeof(topic));
+            messageToSend[(*length)++] = topic;
+        }
+    }
+    else
+    {
+        system("cls");
+        printf("Subscribed to all topics\n");
+        ToContinue();
+    }
     
-    messageToSend[(*length)++] = topic; 
 }
 
 void ToContinue() {
-    printf("Press ENTER key to continue...");
+    printf("\nPress ENTER key to continue...");
     c = getchar();
+}
+
+bool isSubbed(char topic, int topics_subbed) {
+    bool subbed = false;
+
+    if (topics_subbed == 5) {
+        subbed = true;
+    }
+    else {
+        for (int i = 0; i < topics_subbed; i++){
+            if (topic == *(char*)ElementAt(subbedTopics, i)) {
+                subbed = true;
+            }
+        }
+    }
+
+    return subbed;
 }

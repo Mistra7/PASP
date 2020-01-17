@@ -2,8 +2,14 @@
 
 void addToQueue(queue* q, article value) {
 	queueNode* newNode = (queueNode*)malloc(sizeof(queueNode));
-	newNode->value = value;
-	newNode->next = NULL;
+	if (newNode != NULL) {
+		newNode->value = value;
+		newNode->next = NULL;
+	}
+	else
+	{
+		return;
+	}
 
 	if (q->first == NULL && q->last == NULL) {
 		q->first = newNode;
