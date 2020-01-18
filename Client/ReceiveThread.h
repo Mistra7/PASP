@@ -11,7 +11,7 @@
 
 extern HANDLE hEnableReceive;
 extern CRITICAL_SECTION cs;
-extern node* subbedTopics;
+extern node* posts;
 
 DWORD WINAPI receive(LPVOID lpParam);
 

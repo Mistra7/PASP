@@ -41,7 +41,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 		}
 
 		//za svakog pablisera u listi provjeri da li je poslao clanak, ako jeste smjesti ga, na osnovu teme, u odgovarajuci red
-		for (current ; current->next != NULL; current = current->next)
+		for (current ; current != NULL; current = current->next)
 		{
 			FD_ZERO(&set);
 			FD_SET(current->clientSocket, &set);

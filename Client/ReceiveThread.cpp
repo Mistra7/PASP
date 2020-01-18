@@ -17,7 +17,7 @@ DWORD WINAPI receive(LPVOID lpParam) {
             article* post = (article*)recvbuf;
 
             EnterCriticalSection(&cs);
-            AddToList(&subbedTopics, post, sizeof(article));
+            AddToList(&posts, post, sizeof(article));
             LeaveCriticalSection(&cs);
         }
         else if (iResult == 0)

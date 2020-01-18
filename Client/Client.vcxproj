@@ -150,9 +150,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="Publisher.cpp" />
     <ClCompile Include="ReceiveThread.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Publisher.h" />
     <ClInclude Include="ReceiveThread.h" />
   </ItemGroup>
   <ItemGroup>

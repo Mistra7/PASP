@@ -3,9 +3,9 @@
 
 #include <ws2tcpip.h>
 #include "ReceiveThread.h"
+#include "Publisher.h"
 
 #define DEFAULT_PORT 20000
-#define TEXT_LEN 100
 
 enum user_type{PUBLISHER, SUBSCRIBER};
 
@@ -32,6 +32,7 @@ void ToContinue();
 int c; // za ciscenje stdin buffer-a
 
 node* subbedTopics = NULL; // teme na koje je korisnik pretplacen (ne koristi se za publisher-e)
+node* posts = NULL;
 
 CRITICAL_SECTION cs;
 HANDLE hEnableReceive;
@@ -42,9 +43,11 @@ int __cdecl main(int argc, char** argv)
     SOCKET connectSocket = INVALID_SOCKET;
     // message to send
     char messageToSend[DEFAULT_BUFLEN] = "";
-    //char text[TEXT_LEN];
+    char text[TEXT_LEN];
+
     user_type type;
     u_short port;
+    char author[AUTHOR_LEN] = "";
 
     DWORD receiveID;
     HANDLE hReceive;
@@ -115,12 +118,28 @@ int __cdecl main(int argc, char** argv)
     if (type == SUBSCRIBER) {
         ReleaseSemaphore(hEnableReceive, 1, NULL);
     }
+    else {
+        system("cls");
+        printf("Enter username: ");
+        scanf_s("%[^\n]", author, AUTHOR_LEN);
+        while ((c = getchar()) != '\n' && c != EOF) {}
+    }
 
     while (1) {
         int message_length = 0;
 
         if (type == PUBLISHER) {
-
+            switch (publisherMenu())
+            {
+            case (1): article a = createArticle(author);
+                message_length = sizeof(a);
+                memcpy(messageToSend, &a, message_length);
+                break;
+            case (2): exit = true;
+                break;
+            default:
+                break;
+            }
         }
         else if (type == SUBSCRIBER) {
             switch (SubscriberMenu())
@@ -168,6 +187,7 @@ int __cdecl main(int argc, char** argv)
 void ShutdownClient(SOCKET socket, HANDLE hThread) {
     EnterCriticalSection(&cs);
     ClearList(&subbedTopics);
+    ClearList(&posts);
     LeaveCriticalSection(&cs);
 
     CloseHandle(hThread);
@@ -216,7 +236,7 @@ int SubscriberMenu() {
     do {
         system("cls");
         EnterCriticalSection(&cs);
-        printf("Posts not viewed: %d\n\n", Count(subbedTopics));
+        printf("Posts not viewed: %d\n\n", Count(posts));
         LeaveCriticalSection(&cs);
         printf("1. Subscribe to a topic\n");
         printf("2. Read posts\n");
@@ -234,18 +254,7 @@ void SubToTopic(char* messageToSend, int* length) {
     char topic;
     int topics_subbed = Count(subbedTopics);
     if (topics_subbed != 5) {
-        do {
-            system("cls");
-            printf("1 - GAMING\t");
-            printf("2 - TECHNOLOGY\t");
-            printf("3 - MEMES\t");
-            printf("4 - CELEBRITIES\t");
-            printf("5 - SPORT\n");
-
-            printf("Choose a topic: ");
-            topic = getchar();
-            while ((c = getchar()) != '\n' && c != EOF) {}
-        } while (topic < '1' || topic > '5');
+        topic = chooseTopic();
 
         if (isSubbed(topic, topics_subbed)) {
             printf("Already subscribed to topic\n");
@@ -288,7 +297,8 @@ bool isSubbed(char topic, int topics_subbed) {
 }
 
 void DisplayPosts() {
-    int postCnt = Count(subbedTopics);
+    int postCnt = Count(posts);
+    system("cls");
 
     if (postCnt == 0) {
         printf("No new posts have been received\n");
@@ -296,10 +306,10 @@ void DisplayPosts() {
     else {
         for (int i = 0; i < postCnt; i++)
         {
-            printArticle(*(article*)ElementAt(subbedTopics, i));
+            printArticle(*(article*)ElementAt(posts, i));
             printf("---------------------------------------------");
         }
-        ClearList(&subbedTopics);
+        ClearList(&posts);
     }
     ToContinue();
 }
