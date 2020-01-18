@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../Common/Structs.h"
 
 #pragma region strukture
@@ -21,7 +22,7 @@ struct queue {
 //dodajemo clanak u red
 void addToQueue(queue* q, article value);
 //vadimo clanak iz reda i oslobadajmo njegovu memoriju
-article* removeFromQueue(queue* q);
+article removeFromQueue(queue* q);
 //inicijalizacija reda
 void InitQ(queue* q);
 #pragma endregion funkcije za rad sa redom

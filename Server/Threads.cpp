@@ -64,7 +64,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 					recvArticle = *(article*)recvbuf;
 					int n = atoi(&recvArticle.topic);
 					EnterCriticalSection(&qDictionary[n - 1]);
-					enqueue(recvArticle.topic, recvArticle);
+					enqueue(n, recvArticle);
 					LeaveCriticalSection(&qDictionary[n - 1]);
 					ReleaseSemaphore(sems[n], 1, NULL);
 				}

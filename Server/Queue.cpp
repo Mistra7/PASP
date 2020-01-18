@@ -21,20 +21,22 @@ void addToQueue(queue* q, article value) {
 
 }
 
-article* removeFromQueue(queue* q) {
+article removeFromQueue(queue* q) {
+	article ret;
+	ret.topic = '0';
+
 	if (q->first == NULL) {
 		printf("Queue is empty\n");
-		return NULL;
+		return ret;
 	}
 
-	article* ret = NULL;
 	queueNode* temp = q->first;
 
 	if (q->first->next == NULL) {
 		q->last = NULL;
 	}
 
-	*ret = q->first->value;
+	ret = q->first->value;
 	q->first = temp->next;
 	free(temp);
 

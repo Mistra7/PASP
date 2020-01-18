@@ -32,7 +32,7 @@ struct nlist2* install2(char key)
 		if (np == NULL)
 			return NULL;
 		np->key = key;
-		np->articleQueue = NULL;
+		np->articleQueue = (queue*)malloc(sizeof(queue));
 		InitQ(np->articleQueue);
 		hashval = hash2(key);
 		np->next = hashTab2[hashval];
