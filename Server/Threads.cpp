@@ -63,6 +63,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 				{
 					recvArticle = *(article*)recvbuf;
 					int n = atoi(&recvArticle.topic);
+					printf("Publisher %s, sent article with topic %s", recvArticle.authorName, giveMeTopic(n));
 					EnterCriticalSection(&qDictionary[n - 1]);
 					enqueue(n, recvArticle);
 					LeaveCriticalSection(&qDictionary[n - 1]);
@@ -438,12 +439,12 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 		}
 
 		//iteracija kroz clanke koje saljemo
-		for (article* art = criticalDequeue(tema); art != NULL; art = criticalDequeue(tema))
+		for (article art = criticalDequeue(tema); art.topic != '0'; art = criticalDequeue(tema))
 		{
-			printf("\tSending article with authors name: %s to clients\n", art->authorName);
+			printf("\tSending article with authors name: %s to clients\n", art.authorName);
 
 			//iteracija kroz sokete i slanje clanaka
-			for (head; head != NULL; head = criticalNext(head, tema))
+			for (SocketNode* current = head; current != NULL; current = criticalNext(current, tema))
 			{
 				// Initialize select parameters
 				FD_SET set;
@@ -483,13 +484,19 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 				//slanje clanka
 				if (iResult >= 1)
 				{
-					iResult = send(head->clientSocket, (const char*)art, sizeof(*art), 0);
+					iResult = send(current->clientSocket, (const char*)&art, sizeof(article), 0);
 					if (iResult == SOCKET_ERROR) 
 					{
+						if (listLenght(current) == 1)
+						{
+							EnterCriticalSection(&qDictionary[tema - 1]);
+							enqueue(tema, art);
+							LeaveCriticalSection(&qDictionary[tema - 1]);
+						}
 						fprintf(stderr, "send failed with error: %ld\n", WSAGetLastError());
 						//ako je doslo do greske, pretpostavljamo da klijent prekinuo konekciju te izbacujemo njegov soket
 						EnterCriticalSection(&lDictionary[tema - 1]);
-						removeValue(tema, head->clientSocket);
+						removeValue(tema, current->clientSocket);
 						LeaveCriticalSection(&lDictionary[tema - 1]);
 					}
 				}
@@ -501,7 +508,7 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 	#pragma region ciscenje memorije i zatvaranje treda
 	SocketNode* nodes = getAllSockets(tema);
 	//ako imamo preostalih clanaka za slanje, oslobodimo memoriju
-	while (dequeue(tema) != NULL)
+	while (dequeue(tema).topic != '0')
 	{}
 	//oslobadjamo zauzetu memoriju za sokete
 	deleteList(&nodes);
@@ -516,10 +523,10 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 
 #pragma region Pomocne funkcije
 
-article* criticalDequeue(char tema)
+article criticalDequeue(char tema)
 {
 	EnterCriticalSection(&qDictionary[tema + 1]);
-	article* ret = dequeue(tema);
+	article ret = dequeue(tema);
 	LeaveCriticalSection(&qDictionary[tema + 1]);
 
 	return ret;

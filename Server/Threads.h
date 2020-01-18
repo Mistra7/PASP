@@ -28,7 +28,7 @@ extern CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
 
 #pragma region Pomocne funkcije
 //funkcija zaduzena za sigurno vadjenje iz reda
-article* criticalDequeue(char tema);
+article criticalDequeue(char tema);
 
 //funkcija zaduzena za sigurno preuzimanje sledeceg elemnta iz liste
 SocketNode* criticalNext(SocketNode* head, char tema);

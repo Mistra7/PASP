@@ -24,6 +24,6 @@ struct nlist2* install2(char key);
 //ubacuje prvi clanak u red. Ako red ne postoji, stvara ga pozivanjem install2
 void enqueue(char key, article value);
 //vraca prvi clan reda i oslobadja njegovu memoriju, ako je red prazan, vraca NULL
-article* dequeue(char key);
+article dequeue(char key);
 #pragma endregion funkcije za rad sa rjecnikom
 #pragma once

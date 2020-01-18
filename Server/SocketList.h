@@ -19,4 +19,6 @@ int checkIfExists(SocketNode** root, SOCKET s);
 SocketNode* getNext(SocketNode** root);
 //brise citavu listu
 void deleteList(SocketNode** root);
+//broj elemenata u listu
+int listLenght(SocketNode* root);
 #pragma endregion funkcije za rad sa listom

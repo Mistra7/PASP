@@ -49,10 +49,15 @@ void enqueue(char key, article value)
 	addToQueue(np->articleQueue, value);
 }
 
-article* dequeue(char key)
+article dequeue(char key)
 {
+	article n;
+	n.topic = '0';
 	struct nlist2* np;
 	if ((np = lookup2(key)) != NULL)
-		return removeFromQueue((np->articleQueue));
-	return NULL;
+	{
+		n = removeFromQueue((np->articleQueue));
+		return n;
+	}
+	return n;
 }

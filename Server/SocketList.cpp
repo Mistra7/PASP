@@ -102,3 +102,21 @@ void deleteList(SocketNode** root)
 
 	*root = NULL;
 }
+
+int listLenght(SocketNode* root) {
+	int cnt = 0;
+	SocketNode* temp = root;
+
+	while (true) {
+		if (temp == NULL) {
+			break;
+		}
+		else
+		{
+			++cnt;
+			temp = temp->next;
+		}
+	}
+
+	return cnt;
+}
