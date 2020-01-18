@@ -35,6 +35,9 @@ SocketNode* criticalNext(SocketNode* head, char tema);
 
 //funkcija za sigurno preuzimanje promjenjive stopWork
 int criticalStopWork();
+
+//vraca naziv teme na osnovu njene brojne protivvrijednosti
+const char* giveMeTopic(int c);
 #pragma endregion Pomocne funkcije
 
 #pragma region Tred funkcije

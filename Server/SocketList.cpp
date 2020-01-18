@@ -41,7 +41,10 @@ void deleteSocket(SocketNode** root, SOCKET s)
 		if (current->clientSocket == s)
 		{
 			*root = (*root)->next;
-			free(current);
+			current->clientSocket = NULL;
+			current->next = NULL;
+			current = NULL;
+			free(current);			
 			return;
 		}
 
@@ -53,6 +56,9 @@ void deleteSocket(SocketNode** root, SOCKET s)
 			if (current->clientSocket == s)
 			{
 				last->next = current->next;
+				current->clientSocket = NULL;
+				current->next = NULL;
+				current = NULL;
 				free(current);
 				return;
 			}
