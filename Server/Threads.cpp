@@ -321,7 +321,7 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 			}
 			else if(iResult > 0)
 			{
-				printf("New subscriber connected");
+				printf("New subscriber connected\n");
 				addSocket(&subList, acceptedSocket);
 			}
 			
