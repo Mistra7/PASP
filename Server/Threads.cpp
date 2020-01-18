@@ -62,10 +62,11 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 				if (iResult > 0)
 				{
 					recvArticle = *(article*)recvbuf;
-					EnterCriticalSection(&qDictionary[recvArticle.topic + 1]);
+					int n = atoi(&recvArticle.topic);
+					EnterCriticalSection(&qDictionary[n - 1]);
 					enqueue(recvArticle.topic, recvArticle);
-					LeaveCriticalSection(&qDictionary[recvArticle.topic + 1]);
-					ReleaseSemaphore(sems[recvArticle.topic], 1, NULL);
+					LeaveCriticalSection(&qDictionary[n - 1]);
+					ReleaseSemaphore(sems[n], 1, NULL);
 				}
 			}
 		}
@@ -318,7 +319,12 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 				//closesocket(listenForSubscribersSocket);
 				WSACleanup();
 			}
-			addSocket(&subList, acceptedSocket);
+			else if(iResult > 0)
+			{
+				printf("New subscriber connected");
+				addSocket(&subList, acceptedSocket);
+			}
+			
 		}
 	#pragma endregion Novi klijenti
 
@@ -354,10 +360,12 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 				}
 				else
 				{
+					
 					int n = atoi(re);
-					EnterCriticalSection(&lDictionary[n + 1]);
+					EnterCriticalSection(&lDictionary[n - 1]);
 					add(n, current->clientSocket);
-					LeaveCriticalSection(&lDictionary[n + 1]);
+					LeaveCriticalSection(&lDictionary[n - 1]);
+					printf("New subscription on topic %s\n", giveMeTopic(n));
 				}
 			}
 		}
@@ -410,9 +418,9 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 		if (criticalStopWork())
 			break;
 		
-		EnterCriticalSection(&lDictionary[tema + 1]);
+		EnterCriticalSection(&lDictionary[tema - 1]);
 		SocketNode* head = getAllSockets(tema);
-		LeaveCriticalSection(&lDictionary[tema + 1]);
+		LeaveCriticalSection(&lDictionary[tema - 1]);
 
 		//ako nema kome da se salje, clanci ostaju u redu
 		if (head == NULL)
@@ -448,9 +456,9 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 					if (iResult == SOCKET_ERROR)
 					{
 						fprintf(stderr, "select failed with error: %ld\n", WSAGetLastError());
-						EnterCriticalSection(&lDictionary[tema + 1]);
+						EnterCriticalSection(&lDictionary[tema - 1]);
 						removeValue(tema, head->clientSocket);
-						LeaveCriticalSection(&lDictionary[tema + 1]);
+						LeaveCriticalSection(&lDictionary[tema - 1]);
 						break;
 					}
 
@@ -471,9 +479,9 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 					{
 						fprintf(stderr, "send failed with error: %ld\n", WSAGetLastError());
 						//ako je doslo do greske, pretpostavljamo da klijent prekinuo konekciju te izbacujemo njegov soket
-						EnterCriticalSection(&lDictionary[tema + 1]);
+						EnterCriticalSection(&lDictionary[tema - 1]);
 						removeValue(tema, head->clientSocket);
-						LeaveCriticalSection(&lDictionary[tema + 1]);
+						LeaveCriticalSection(&lDictionary[tema - 1]);
 					}
 				}
 			}
@@ -523,6 +531,25 @@ int criticalStopWork()
 	int i = stopWork;
 	LeaveCriticalSection(&stopWorkCS);
 	return i;
+}
+
+const char* giveMeTopic(int c)
+{
+	switch (c)
+	{
+		case 1:
+			return "gaming";
+		case 2:
+			return "technology";
+		case 3:
+			return "memes";
+		case 4:
+			return "celebrities";
+		case 5:
+			return "sport";
+	}
+
+	return "";
 }
 
 #pragma endregion Pomocne funkcije

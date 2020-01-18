@@ -20,7 +20,7 @@ int main()
 		return 1;
 	}
 
-#pragma region inicijalizacija semafora i kriticnih sekcija
+	#pragma region inicijalizacija semafora i kriticnih sekcija
 	InitializeCriticalSection(&stopWorkCS);
 	InitializeCriticalSection(&pubList);
 	sems[0] = CreateSemaphore(0, 0, 5, NULL);
@@ -35,6 +35,7 @@ int main()
 	}
 #pragma endregion inicijalizacija semafora i kriticnih sekcija
 
+	#pragma region inicijalizacija tredova
 	DWORD listenPublishersID, listenSubscribresID;
 	DWORD helpPublishersID;
 	//0x01, 0x02, 0x03, 0x04, 0x05 --respektivno
@@ -57,8 +58,10 @@ int main()
 	subMemes = CreateThread(NULL, 0, &helpSubscribers, &tema3, 0, &subMemesID);
 	subCelebs = CreateThread(NULL, 0, &helpSubscribers, &tema4, 0, &subCelebsID);
 	subSport = CreateThread(NULL, 0, &helpSubscribers, &tema5, 0, &subSportID);
+	#pragma endregion inicijalizacija tredova
 
-	HANDLE array[14] = { listenPublishers, listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport, sems[0], sems[1], sems[2], sems[3], sems[4], sems[5] };
+	#pragma region zatvaranje programa i klinap
+	HANDLE array[6] = { sems[0], sems[1], sems[2], sems[3], sems[4], sems[5] };
 	HANDLE array2[8] = { listenPublishers, listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport };
 	Sleep(100);
 	printf("\n\t\tPress any key to leave\n");
@@ -69,9 +72,11 @@ int main()
 	ReleaseSemaphore(sems[0], 5, NULL);
 	WaitForMultipleObjects(8, array2, true, INFINITE);
 
-	for (int i = 0; i < 14; i++)
+	for (int i = 0; i < 8; i++)
 	{
-		CloseHandle(array[i]);
+		CloseHandle(array2[i]);
+		if(i < 6)
+			CloseHandle(array[i]);
 		if (i < 5)
 		{
 			DeleteCriticalSection(&lDictionary[i]);
@@ -82,6 +87,7 @@ int main()
 	DeleteCriticalSection(&pubList);
 
 	WSACleanup();
+	#pragma endregion zatvaranje programa i klinap
 
 	return 0;
 }
