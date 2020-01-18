@@ -329,46 +329,55 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 	#pragma endregion Novi klijenti
 
 		#pragma region Nove sabskripcije
-		SocketNode* current = subList;
-		for (current; current != NULL; current = current->next)
+		if (subList != NULL)
 		{
-			FD_SET set;
-			timeval timeVal;
-
-			timeVal.tv_sec = 0;
-			timeVal.tv_usec = 0;
-			FD_ZERO(&set);
-			// Add socket we will wait to read from
-			FD_SET(current->clientSocket, &set);
-
-			iResult = select(0, &set, NULL, NULL, &timeVal);
-
-			if (iResult == SOCKET_ERROR)
+			SocketNode* current = subList;
+			for (current; current != NULL; current = current->next)
 			{
-				fprintf(stderr, "select failed with error: %ld\n", WSAGetLastError());
-				deleteSocket(&subList, current->clientSocket);
-			}
+				FD_SET set;
+				timeval timeVal;
 
-			if (iResult != 0)
-			{
-				char re[1];
-				iResult = recv(current->clientSocket, re, 1, 0);
+				timeVal.tv_sec = 0;
+				timeVal.tv_usec = 0;
+				FD_ZERO(&set);
+				// Add socket we will wait to read from
+				FD_SET(current->clientSocket, &set);
+
+				iResult = select(0, &set, NULL, NULL, &timeVal);
+
 				if (iResult == SOCKET_ERROR)
 				{
-					fprintf(stderr, "recive failed with error: %ld\n", WSAGetLastError());
+					fprintf(stderr, "select failed with error: %ld\n", WSAGetLastError());
 					deleteSocket(&subList, current->clientSocket);
 				}
-				else
+
+				if (iResult != 0)
 				{
-					
-					int n = atoi(re);
-					EnterCriticalSection(&lDictionary[n - 1]);
-					add(n, current->clientSocket);
-					LeaveCriticalSection(&lDictionary[n - 1]);
-					printf("New subscription on topic %s\n", giveMeTopic(n));
+					char re[1];
+					iResult = recv(current->clientSocket, re, 1, 0);
+					if (iResult == SOCKET_ERROR)
+					{
+						fprintf(stderr, "recive failed with error: %ld\n", WSAGetLastError());
+						deleteSocket(&subList, current->clientSocket);
+					}
+					else if (iResult == 0)
+					{
+						printf("Client has closed the connection! Deleting him from list!\n");
+						closesocket(current->clientSocket);
+						deleteSocket(&subList, current->clientSocket);
+					}
+					else
+					{
+
+						int n = atoi(re);
+						EnterCriticalSection(&lDictionary[n - 1]);
+						add(n, current->clientSocket);
+						LeaveCriticalSection(&lDictionary[n - 1]);
+						printf("New subscription on topic %s\n", giveMeTopic(n));
+					}
 				}
 			}
-		}
+		}		
 		Sleep(50);
 	#pragma endregion Nove sabskripcije
 	}
