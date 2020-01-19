@@ -61,3 +61,18 @@ article dequeue(char key)
 	}
 	return n;
 }
+
+void destroyKeyValueQD(char key)
+{
+	struct nlist2* np  = lookup2(key);
+
+	if (np == NULL)
+		return;
+
+	while (dequeue(key).topic != '0')
+	{
+	}
+
+	free(np);
+
+}

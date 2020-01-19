@@ -62,3 +62,19 @@ SocketNode* getAllSockets(char key)
 		return np->clientSockets;
 	return NULL;
 }
+
+void destroyKeyValueLD(char key)
+{
+	struct nlist* np = lookup(key);
+
+	if (np == NULL)
+		return;
+
+	SocketNode* current = np->clientSockets;
+	SocketNode* temp = NULL;
+	deleteList(&(np->clientSockets));
+
+	np->next = NULL;
+	free(np);
+	
+}

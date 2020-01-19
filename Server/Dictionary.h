@@ -25,4 +25,6 @@ void add(char key, SOCKET value);
 void removeValue(char key, SOCKET value);
 //vraca listu 
 SocketNode* getAllSockets(char key);
+//unistava key value par u rjecniku
+void destroyKeyValueLD(char key);
 #pragma endregion funkcije za rad sa rjecnikom

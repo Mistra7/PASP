@@ -506,12 +506,11 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 	}
 
 	#pragma region ciscenje memorije i zatvaranje treda
-	SocketNode* nodes = getAllSockets(tema);
-	//ako imamo preostalih clanaka za slanje, oslobodimo memoriju
-	while (dequeue(tema).topic != '0')
-	{}
-	//oslobadjamo zauzetu memoriju za sokete
-	deleteList(&nodes);
+
+	//oslobodimo vrijednost u rjecnicima
+	destroyKeyValueQD(tema);
+	destroyKeyValueLD(tema);
+
 	//vracamo se u main tred
 	printf("Closing thread for communication with subscribers\n");
 	#pragma endregion ciscenje memorije i zatvaranje treda

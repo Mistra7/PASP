@@ -25,5 +25,7 @@ struct nlist2* install2(char key);
 void enqueue(char key, article value);
 //vraca prvi clan reda i oslobadja njegovu memoriju, ako je red prazan, vraca NULL
 article dequeue(char key);
+//unistava key value par u rjecniku
+void destroyKeyValueQD(char key);
 #pragma endregion funkcije za rad sa rjecnikom
 #pragma once
