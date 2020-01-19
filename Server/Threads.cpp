@@ -375,6 +375,7 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 						add(n, current->clientSocket);
 						LeaveCriticalSection(&lDictionary[n - 1]);
 						printf("New subscription on topic %s\n", giveMeTopic(n));
+						ReleaseSemaphore(sems[n + 5], 1, NULL);
 					}
 				}
 			}
@@ -418,13 +419,13 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 	//za smjestanje povratnih vrijednosti funkcija
 	int iResult;
 	//semafori na koje cekamo
-	HANDLE semArray[2] = { sems[0], sems[tema] };
+	HANDLE semArray[3] = { sems[0], sems[tema], sems[tema + 5] };
 	printf("Thread with key: %x started\n", tema);
 	while (true)
 	{
 		//cekamo semafor koji nam javlja da ima clanaka za poslati ili semafor koji nam govori da 
 		//tred treba da se ugasi
-		WaitForMultipleObjects(2, semArray, false, INFINITE);
+		WaitForMultipleObjects(3, semArray, false, INFINITE);
 		if (criticalStopWork())
 			break;
 		
@@ -437,14 +438,17 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 		{
 			continue;
 		}
-
+		int breakSending = 0;
 		//iteracija kroz clanke koje saljemo
 		for (article art = criticalDequeue(tema); art.topic != '0'; art = criticalDequeue(tema))
 		{
 			printf("\tSending article with authors name: %s to clients\n", art.authorName);
 
 			//iteracija kroz sokete i slanje clanaka
-			for (SocketNode* current = head; current != NULL; current = criticalNext(current, tema))
+			//for (SocketNode* current = head; current != NULL; current = criticalNext(current, tema))
+			SocketNode* current = head;
+			SocketNode* temp = NULL;
+			while(current != NULL)
 			{
 				// Initialize select parameters
 				FD_SET set;
@@ -458,16 +462,25 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 					timeVal.tv_usec = 0;
 					FD_ZERO(&set);
 					// Add socket we will wait to read from
-					FD_SET(head->clientSocket, &set);
+					FD_SET(current->clientSocket, &set);
 
 					iResult = select(0, NULL, &set, NULL, &timeVal);
 
 					// lets check if there was an error during select
 					if (iResult == SOCKET_ERROR)
 					{
+						if (listLenght(current) == 1)
+						{
+							EnterCriticalSection(&qDictionary[tema - 1]);
+							enqueue(tema, art);
+							LeaveCriticalSection(&qDictionary[tema - 1]);
+							breakSending = 1;
+						}
 						fprintf(stderr, "select failed with error: %ld\n", WSAGetLastError());
+						temp = current;
+						current = current->next;
 						EnterCriticalSection(&lDictionary[tema - 1]);
-						removeValue(tema, head->clientSocket);
+						removeValue(tema, temp->clientSocket);
 						LeaveCriticalSection(&lDictionary[tema - 1]);
 						break;
 					}
@@ -492,15 +505,24 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 							EnterCriticalSection(&qDictionary[tema - 1]);
 							enqueue(tema, art);
 							LeaveCriticalSection(&qDictionary[tema - 1]);
+							breakSending = 1;
 						}
 						fprintf(stderr, "send failed with error: %ld\n", WSAGetLastError());
 						//ako je doslo do greske, pretpostavljamo da klijent prekinuo konekciju te izbacujemo njegov soket
+						temp = current;
+						current = current->next;
 						EnterCriticalSection(&lDictionary[tema - 1]);
-						removeValue(tema, current->clientSocket);
+						removeValue(tema, temp->clientSocket);
 						LeaveCriticalSection(&lDictionary[tema - 1]);
+					}
+					else
+					{
+						current = current->next;
 					}
 				}
 			}
+			if (breakSending)
+				break;
 		}
 		
 	}

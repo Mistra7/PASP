@@ -9,7 +9,7 @@
 bool InitializeWindowsSockets();
 int stopWork = 0;
 CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
-HANDLE sems[6];
+HANDLE sems[11];
 
 int main()
 {
@@ -25,12 +25,16 @@ int main()
 	InitializeCriticalSection(&pubList);
 	sems[0] = CreateSemaphore(0, 0, 5, NULL);
 	
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		sems[i + 1] = CreateSemaphore(0, 0, 150000, NULL);
 
-		InitializeCriticalSection(&lDictionary[i]);
-		InitializeCriticalSection(&qDictionary[i]);
+		if (i < 5)
+		{
+			InitializeCriticalSection(&lDictionary[i]);
+			InitializeCriticalSection(&qDictionary[i]);
+		}
+		
 		
 	}
 #pragma endregion inicijalizacija semafora i kriticnih sekcija
@@ -61,7 +65,6 @@ int main()
 	#pragma endregion inicijalizacija tredova
 
 	#pragma region zatvaranje programa i klinap
-	HANDLE array[6] = { sems[0], sems[1], sems[2], sems[3], sems[4], sems[5] };
 	HANDLE array2[8] = { listenPublishers, listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport };
 	Sleep(100);
 	printf("\n\t\tPress any key to leave\n");
@@ -72,11 +75,11 @@ int main()
 	ReleaseSemaphore(sems[0], 5, NULL);
 	WaitForMultipleObjects(8, array2, true, INFINITE);
 
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < 11; i++)
 	{
-		CloseHandle(array2[i]);
-		if(i < 6)
-			CloseHandle(array[i]);
+		if(i < 8)
+			CloseHandle(array2[i]);
+		CloseHandle(sems[i]);
 		if (i < 5)
 		{
 			DeleteCriticalSection(&lDictionary[i]);
