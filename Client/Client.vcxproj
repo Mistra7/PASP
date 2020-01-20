@@ -150,12 +150,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="Core.cpp" />
     <ClCompile Include="Publisher.cpp" />
     <ClCompile Include="ReceiveThread.cpp" />
+    <ClCompile Include="Subscriber.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core.h" />
     <ClInclude Include="Publisher.h" />
     <ClInclude Include="ReceiveThread.h" />
+    <ClInclude Include="Subscriber.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.vcxproj">

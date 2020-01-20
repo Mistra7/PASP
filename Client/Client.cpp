@@ -1,31 +1,20 @@
 #pragma comment(lib, "Ws2_32.lib")
 #define WIN32_LEAN_AND_MEAN
 
-#include <ws2tcpip.h>
+#include "Core.h"
 #include "ReceiveThread.h"
 #include "Publisher.h"
+#include "Subscriber.h"
 
 #define DEFAULT_PORT 20000
+
+void Send(SOCKET, char*, int, bool*);
 
 void ShutdownClient(SOCKET, HANDLE);
 
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
-
-void SendMessage(SOCKET, char*, int, HANDLE);
-
-int SubscriberMenu();
-
-void SubToTopic(char*, int*);
-
-bool isSubbed(char, int);
-
-void DisplayPosts();
-
-void printArticle(article);
-
-void ToContinue();
 
 int c; // za ciscenje stdin buffer-a
 
@@ -151,7 +140,7 @@ int __cdecl main(int argc, char** argv)
                 }
                 break;
             case 2: EnterCriticalSection(&list_cs);
-                DisplayPosts();
+                DisplayPosts(&posts);
                 LeaveCriticalSection(&list_cs);
                 break;
             case 3: EnterCriticalSection(&exit_cs);
@@ -167,18 +156,8 @@ int __cdecl main(int argc, char** argv)
             break;
         }
        
-        // Send an prepared message with null terminator included
-        /*printf("Enter message to send: ");
-        scanf_s("%[^\n]", messageToSend, DEFAULT_BUFLEN);
-        while ((c = getchar()) != '\n' && c != EOF) {}*/
-
-        /*messageToSend = (char*)malloc(strlen(text) + 1);
-        memcpy(messageToSend, text, strlen(text) + 1);*/
-        /*if (strcmp(messageToSend, "STOP") == 0) {
-            break;
-        }*/
         if (message_length > 0) {
-            SendMessage(tp.socket, messageToSend, message_length, hReceive);
+            Send(tp.socket, messageToSend, message_length, &exit);
         }
         
     }
@@ -190,6 +169,29 @@ int __cdecl main(int argc, char** argv)
     return 0;
 }
 
+void Send(SOCKET socket, char* messageToSend, int length, bool* exit)
+{
+    // variable used to store function return value
+    int iResult;
+
+    Select(socket, true);
+
+    iResult = send(socket, messageToSend, length, 0);
+
+    if (iResult == SOCKET_ERROR)
+    {
+        printf("send failed with error: %d\n", WSAGetLastError());
+        EnterCriticalSection(&exit_cs);
+        *exit = true;
+        LeaveCriticalSection(&exit_cs);
+    }
+    else {
+        printf("Bytes Sent: %ld\n", iResult);
+    }
+
+    ToContinue();
+}
+
 void ShutdownClient(SOCKET socket, HANDLE hThread) {
     EnterCriticalSection(&list_cs);
     ClearList(&posts);
@@ -198,6 +200,7 @@ void ShutdownClient(SOCKET socket, HANDLE hThread) {
 
     CloseHandle(hThread);
     DeleteCriticalSection(&list_cs);
+    DeleteCriticalSection(&exit_cs);
     closesocket(socket);
     WSACleanup();
 }
@@ -214,125 +217,3 @@ bool InitializeWindowsSockets()
     return true;
 }
 
-void SendMessage(SOCKET socket, char* messageToSend, int length, HANDLE hThread)
-{
-    // variable used to store function return value
-    int iResult;
-
-    Select(socket, true);
-
-    iResult = send(socket, messageToSend, length, 0);
-
-    if (iResult == SOCKET_ERROR)
-    {
-        printf("send failed with error: %d\n", WSAGetLastError());
-        ShutdownClient(socket, hThread);
-        ToContinue();
-        exit(1);
-    }
-
-    printf("Bytes Sent: %ld\n", iResult);
-    ToContinue();
-}
-
-int SubscriberMenu() {
-    int option;
-
-    do {
-        system("cls");
-        printf("1. Subscribe to a topic\n");
-        printf("2. Read posts\n");
-        printf("3. Exit\n");
-
-        printf("Choose an option: ");
-        scanf_s("%d", &option);
-        while ((c = getchar()) != '\n' && c != EOF) {}
-    } while (option < 1 || option > 3);
-
-    return option;
-}
-
-void SubToTopic(char* messageToSend, int* length) {
-    char topic;
-    int topics_subbed = Count(subbedTopics);
-    if (topics_subbed != 5) {
-        topic = chooseTopic();
-
-        if (isSubbed(topic, topics_subbed)) {
-            printf("Already subscribed to topic\n");
-            ToContinue();
-        }
-        else {
-            AddToList(&subbedTopics, &topic, sizeof(topic));
-            messageToSend[(*length)++] = topic;
-        }
-    }
-    else
-    {
-        system("cls");
-        printf("Subscribed to all topics\n");
-        ToContinue();
-    }
-    
-}
-
-void ToContinue() {
-    printf("\nPress ENTER key to continue...");
-    c = getchar();
-}
-
-bool isSubbed(char topic, int topics_subbed) {
-    bool subbed = false;
-
-    if (topics_subbed == 5) {
-        subbed = true;
-    }
-    else {
-        for (int i = 0; i < topics_subbed; i++){
-            if (topic == *(char*)ElementAt(subbedTopics, i)) {
-                subbed = true;
-            }
-        }
-    }
-
-    return subbed;
-}
-
-void DisplayPosts() {
-    int postCnt = Count(posts);
-    system("cls");
-
-    if (postCnt == 0) {
-        printf("No new posts have been received\n");
-    }
-    else {
-        for (int i = 0; i < postCnt; i++)
-        {
-            printArticle(*(article*)ElementAt(posts, i));
-            printf("---------------------------------------------");
-        }
-        ClearList(&posts);
-    }
-    ToContinue();
-}
-
-void printArticle(article post) {
-    switch (post.topic)
-    {
-    case ('1'): printf("GAMING\n");
-        break;
-    case ('2'): printf("TECHNOLOGY\n");
-        break;
-    case ('3'): printf("MEMES\n");
-        break;
-    case ('4'): printf("CELEBRITIES\n");
-        break;
-    case ('5'): printf("SPORT\n");
-        break;
-    default:
-        break;
-    }
-
-    printf("%s\n", post.text);
-    printf("by %s\n", post.authorName);
-}
