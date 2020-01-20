@@ -1,37 +1,38 @@
 #include "ReceiveThread.h"
 
 DWORD WINAPI receive(LPVOID lpParam) {
-    WaitForSingleObject(hEnableReceive, INFINITE);
-
-    SOCKET socket = *(SOCKET*)lpParam;
+    threadParam tp = *(threadParam*)lpParam;
     int iResult;
     char recvbuf[DEFAULT_BUFLEN] = "";
 
     while (1) {
-        Select(socket, false);
+        Select(tp.socket, false);
 
         // Receive data until the client shuts down the connection
-        iResult = recv(socket, recvbuf, DEFAULT_BUFLEN, 0);
+        iResult = recv(tp.socket, recvbuf, DEFAULT_BUFLEN, 0);
         if (iResult > 0)
         {
-            article* post = (article*)recvbuf;
+            if (tp.type == SUBSCRIBER) {
+                article* post = (article*)recvbuf;
 
-            EnterCriticalSection(&cs);
-            AddToList(&posts, post, sizeof(article));
-            LeaveCriticalSection(&cs);
+                EnterCriticalSection(&list_cs);
+                AddToList(&posts, post, sizeof(article));
+                LeaveCriticalSection(&list_cs);
+                printf("\nNew post received\n");
+            }      
         }
         else if (iResult == 0)
         {
             // connection was closed gracefully
-            printf("Connection with client closed.\n");
-            closesocket(socket);
+            printf("\nServer has been shutdown.\n");
+            *tp.exit = true;
             break;
         }
         else
         {
             // there was an error during recv
             printf("recv failed with error: %d\n", WSAGetLastError());
-            closesocket(socket);
+            closesocket(tp.socket);
             break;
         }
     }

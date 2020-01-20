@@ -9,9 +9,16 @@
 
 #define DEFAULT_BUFLEN 512
 
-extern HANDLE hEnableReceive;
-extern CRITICAL_SECTION cs;
+enum user_type { PUBLISHER, SUBSCRIBER };
+
+extern CRITICAL_SECTION list_cs, exit_cs;
 extern node* posts;
+
+struct threadParam{
+	SOCKET socket;
+	user_type type;
+	bool* exit;
+};
 
 DWORD WINAPI receive(LPVOID lpParam);
 

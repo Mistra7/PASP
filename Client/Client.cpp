@@ -7,8 +7,6 @@
 
 #define DEFAULT_PORT 20000
 
-enum user_type{PUBLISHER, SUBSCRIBER};
-
 void ShutdownClient(SOCKET, HANDLE);
 
 // Initializes WinSock2 library
@@ -34,18 +32,17 @@ int c; // za ciscenje stdin buffer-a
 node* subbedTopics = NULL; // teme na koje je korisnik pretplacen (ne koristi se za publisher-e)
 node* posts = NULL;
 
-CRITICAL_SECTION cs;
-HANDLE hEnableReceive;
+CRITICAL_SECTION list_cs, exit_cs;
 
 int __cdecl main(int argc, char** argv)
 {
     // socket used to communicate with server
-    SOCKET connectSocket = INVALID_SOCKET;
+    //SOCKET connectSocket = 
     // message to send
     char messageToSend[DEFAULT_BUFLEN] = "";
     char text[TEXT_LEN];
 
-    user_type type;
+    //user_type type;
     u_short port;
     char author[AUTHOR_LEN] = "";
 
@@ -53,6 +50,10 @@ int __cdecl main(int argc, char** argv)
     HANDLE hReceive;
 
     bool exit = false;
+
+    threadParam tp;
+    tp.exit = &exit;
+    tp.socket = INVALID_SOCKET;
 
     // Validate the parameters
     if (argc != 2)
@@ -72,23 +73,23 @@ int __cdecl main(int argc, char** argv)
         system("cls");
         printf("0 - PUBLISHER\t1 - SUBSCRIBER\n");
         printf("Choose user type: ");
-        scanf_s("%d", &type);
+        scanf_s("%d", &tp.type);
         while ((c = getchar()) != '\n' && c != EOF) {}
-    } while (type != 0 && type != 1);
+    } while (tp.type != 0 && tp.type != 1);
 
-    if (type == PUBLISHER) {
+    if (tp.type == PUBLISHER) {
         port = DEFAULT_PORT;
     }
     else {
         port = DEFAULT_PORT + 1;
     }
-    
+
     // create a socket
-    connectSocket = socket(AF_INET,
+    tp.socket = socket(AF_INET,
         SOCK_STREAM,
         IPPROTO_TCP);
 
-    if (connectSocket == INVALID_SOCKET)
+    if (tp.socket == INVALID_SOCKET)
     {
         printf("socket failed with error: %ld\n", WSAGetLastError());
         WSACleanup();
@@ -102,23 +103,20 @@ int __cdecl main(int argc, char** argv)
     inet_pton(serverAddress.sin_family, argv[1], &serverAddress.sin_addr.s_addr);
     serverAddress.sin_port = htons(port);
     // connect to server specified in serverAddress and socket connectSocket
-    if (connect(connectSocket, (SOCKADDR*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR)
+    if (connect(tp.socket, (SOCKADDR*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR)
     {
         printf("Unable to connect to server.\n");
-        closesocket(connectSocket);
+        closesocket(tp.socket);
         ToContinue();
         return 1;
     }
 
 
-    hReceive = CreateThread(NULL, 0, &receive, &connectSocket, 0, &receiveID);
-    hEnableReceive = CreateSemaphore(NULL, 0, 1, NULL);
-    InitializeCriticalSection(&cs);
+    hReceive = CreateThread(NULL, 0, &receive, &tp, 0, &receiveID);
+    InitializeCriticalSection(&list_cs);
+    InitializeCriticalSection(&exit_cs);
 
-    if (type == SUBSCRIBER) {
-        ReleaseSemaphore(hEnableReceive, 1, NULL);
-    }
-    else {
+    if (tp.type == PUBLISHER) {
         system("cls");
         printf("Enter username: ");
         scanf_s("%[^\n]", author, AUTHOR_LEN);
@@ -128,29 +126,37 @@ int __cdecl main(int argc, char** argv)
     while (1) {
         int message_length = 0;
 
-        if (type == PUBLISHER) {
+        if (tp.type == PUBLISHER) {
             switch (publisherMenu())
             {
-            case (1): article a = createArticle(author);
-                message_length = sizeof(a);
-                memcpy(messageToSend, &a, message_length);
+            case 1: if (!exit) {
+                    article a = createArticle(author);
+                    message_length = sizeof(a);
+                    memcpy(messageToSend, &a, message_length);
+                }
                 break;
-            case (2): exit = true;
+            case 2: EnterCriticalSection(&exit_cs);
+                exit = true;
+                LeaveCriticalSection(&exit_cs);
                 break;
             default:
                 break;
             }
         }
-        else if (type == SUBSCRIBER) {
+        else if (tp.type == SUBSCRIBER) {
             switch (SubscriberMenu())
             {
-            case 1: SubToTopic(messageToSend, &message_length);
+            case 1: if (!exit) {
+                    SubToTopic(messageToSend, &message_length);
+                }
                 break;
-            case 2: EnterCriticalSection(&cs);
+            case 2: EnterCriticalSection(&list_cs);
                 DisplayPosts();
-                LeaveCriticalSection(&cs);
+                LeaveCriticalSection(&list_cs);
                 break;
-            case 3: exit = true;
+            case 3: EnterCriticalSection(&exit_cs);
+                exit = true;
+                LeaveCriticalSection(&exit_cs);
                 break;
             default:
                 break;
@@ -172,27 +178,26 @@ int __cdecl main(int argc, char** argv)
             break;
         }*/
         if (message_length > 0) {
-            SendMessage(connectSocket, messageToSend, message_length, hReceive);
+            SendMessage(tp.socket, messageToSend, message_length, hReceive);
         }
         
     }
     
     //getchar();
     // cleanup
-    ShutdownClient(connectSocket, hReceive);
+    ShutdownClient(tp.socket, hReceive);
 
     return 0;
 }
 
 void ShutdownClient(SOCKET socket, HANDLE hThread) {
-    EnterCriticalSection(&cs);
-    ClearList(&subbedTopics);
+    EnterCriticalSection(&list_cs);
     ClearList(&posts);
-    LeaveCriticalSection(&cs);
+    LeaveCriticalSection(&list_cs);
+    ClearList(&subbedTopics);
 
     CloseHandle(hThread);
-    CloseHandle(hEnableReceive);
-    DeleteCriticalSection(&cs);
+    DeleteCriticalSection(&list_cs);
     closesocket(socket);
     WSACleanup();
 }
@@ -235,9 +240,6 @@ int SubscriberMenu() {
 
     do {
         system("cls");
-        EnterCriticalSection(&cs);
-        printf("Posts not viewed: %d\n\n", Count(posts));
-        LeaveCriticalSection(&cs);
         printf("1. Subscribe to a topic\n");
         printf("2. Read posts\n");
         printf("3. Exit\n");
