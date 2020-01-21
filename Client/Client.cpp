@@ -6,27 +6,41 @@
 #include "Publisher.h"
 #include "Subscriber.h"
 
+//Port na koji se publisher-i javljaju, za klijente je veci za jedan
 #define DEFAULT_PORT 20000
 
+/*
+Opis: Slanje poruka na server
+Param: Soket servera, poruka koja se salje na server,
+duzina poruke i adresa bool-a za gasenje servera
+Povratni: Nema
+*/
 void Send(SOCKET, char*, int, bool*);
 
+/*
+Opis: Gasenje klijenta
+Param: Soket servera i handle treda za prijem poruka
+Povratni: Nema
+*/
 void ShutdownClient(SOCKET, HANDLE);
 
 // Initializes WinSock2 library
 // Returns true if succeeded, false otherwise.
 bool InitializeWindowsSockets();
 
-int c; // za ciscenje stdin buffer-a
+//Za ciscenje stdin buffer-a
+int c; 
 
-node* subbedTopics = NULL; // teme na koje je korisnik pretplacen (ne koristi se za publisher-e)
-node* posts = NULL;
+//Lista postova koji su stigli preko mreze
+node* posts;
+//Lista topic-a na koje je korinsik pretplacen
+node* subbedTopics;
 
+//Kriticne sekcije za rukovanje sa listom post-ova i bool-om za gasenje klijenta
 CRITICAL_SECTION list_cs, exit_cs;
 
 int __cdecl main(int argc, char** argv)
 {
-    // socket used to communicate with server
-    //SOCKET connectSocket = 
     // message to send
     char messageToSend[DEFAULT_BUFLEN] = "";
     char text[TEXT_LEN];
@@ -42,6 +56,7 @@ int __cdecl main(int argc, char** argv)
 
     threadParam tp;
     tp.exit = &exit;
+    // socket used to communicate with server
     tp.socket = INVALID_SOCKET;
 
     // Validate the parameters
