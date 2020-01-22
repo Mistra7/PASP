@@ -40,11 +40,11 @@ int main()
 #pragma endregion inicijalizacija semafora i kriticnih sekcija
 
 	#pragma region inicijalizacija tredova
-	DWORD listenPublishersID, listenSubscribresID;
+	DWORD listenSubscribresID; //listenPublishersID
 	DWORD helpPublishersID;
 	//0x01, 0x02, 0x03, 0x04, 0x05 --respektivno
 	DWORD subGamesID, subTehnologyID, subMemesID, subCelebsID, subSportID;
-	HANDLE listenPublishers, listenSubscribres;
+	HANDLE listenSubscribres; //listenPublishers
 	HANDLE helpPub;
 	HANDLE subGames, subTehnology, subMemes, subCelebs, subSport;
 
@@ -54,7 +54,7 @@ int main()
 	char tema4 = 0x04;
 	char tema5 = 0x05;
 
-	listenPublishers = CreateThread(NULL, 0, &listenForPublishers, NULL, 0, &listenPublishersID);
+	//listenPublishers = CreateThread(NULL, 0, &listenForPublishers, NULL, 0, &listenPublishersID);
 	listenSubscribres = CreateThread(NULL, 0, &listenForSubscribers, NULL, 0, &listenSubscribresID);
 	helpPub = CreateThread(NULL, 0, &helpPublishers, NULL, 0, &helpPublishersID);
 	subGames = CreateThread(NULL, 0, &helpSubscribers, &tema1, 0, &subGamesID);
@@ -65,7 +65,7 @@ int main()
 	#pragma endregion inicijalizacija tredova
 
 	#pragma region zatvaranje programa i klinap
-	HANDLE array2[8] = { listenPublishers, listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport };
+	HANDLE array2[7] = { listenSubscribres, helpPub, subGames, subTehnology, subMemes, subCelebs, subSport };
 	Sleep(100);
 	printf("\n\t\tPress any key to leave\n");
 	char lit = getchar();
@@ -73,11 +73,11 @@ int main()
 	stopWork = 1;
 	LeaveCriticalSection(&stopWorkCS);
 	ReleaseSemaphore(sems[0], 5, NULL);
-	WaitForMultipleObjects(8, array2, true, INFINITE);
+	WaitForMultipleObjects(7, array2, true, INFINITE);
 
 	for (int i = 0; i < 11; i++)
 	{
-		if(i < 8)
+		if(i < 7)
 			CloseHandle(array2[i]);
 		CloseHandle(sems[i]);
 		if (i < 5)

@@ -3,16 +3,17 @@
 DWORD WINAPI receive(LPVOID lpParam) {
     threadParam tp = *(threadParam*)lpParam;
     int iResult;
-    char recvbuf[DEFAULT_BUFLEN] = "";
+    char recvbuf[sizeof(article)] = "";
 
     while (1) {
         Select(tp.socket, false);
 
         // Receive data until the client shuts down the connection
-        iResult = recv(tp.socket, recvbuf, DEFAULT_BUFLEN, 0);
+        iResult = recv(tp.socket, recvbuf, sizeof(article), 0);
         if (iResult > 0)
         {
             if (tp.type == SUBSCRIBER) {
+				
                 article* post = (article*)recvbuf;
 
                 EnterCriticalSection(&list_cs);

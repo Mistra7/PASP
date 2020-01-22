@@ -42,7 +42,7 @@ const char* giveMeTopic(int c);
 #pragma endregion Pomocne funkcije
 
 #pragma region Tred funkcije
-//ova funkcija je zaduzena za "slusanje" sabskrajbera, kreiranje soketa, primanje prve teme i smjestanje soketa u odgovarajucu listu
+//ova funkcija je zaduzena za "slusanje" sabskrajbera, kreiranje soketa, primanje tema i smjestanje soketa u odgovarajucu listu
 //soketa na osnovu teme
 DWORD WINAPI listenForSubscribers(LPVOID lpParam);
 
@@ -51,11 +51,9 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam);
 //parametar je tema za koju je tred zaduzen
 DWORD WINAPI helpSubscribers(LPVOID lpParam);
 
-//ova funkcija je zaduzena za prijem clanaka od pablisera koje onda smjesta u odgovarajuci red u QueueDictionary
-DWORD WINAPI helpPublishers(LPVOID lpParam);
-
 //ova funkcija je zaduzena za "slusanje" pablisera, kreiranje soketa i smjestanje soketa u u listu pablisera
-DWORD WINAPI listenForPublishers(LPVOID lpParam);
+//i za prijem clanaka od pablisera koje onda smjesta u odgovarajuci red u QueueDictionary
+DWORD WINAPI helpPublishers(LPVOID lpParam);
 #pragma endregion Tred funkcije
 
 
