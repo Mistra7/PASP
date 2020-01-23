@@ -87,7 +87,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 #pragma endregion Otvaranje novog neblokirajuceg listen soketa
 
 	//buffer u koje smjestamo poruke klijenata
-	char recvbuf[DEFAULT_BUFLEN];
+	char recvbuf[sizeof(article)];
 	FD_SET set;
 	timeval timeVal;
 	//za smjestanje povratnih vrijednosti funkcija
@@ -159,7 +159,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 			}
 			else if (iResult != 0)
 			{
-				iResult = recv(current->clientSocket, recvbuf, DEFAULT_BUFLEN, 0);
+				iResult = recv(current->clientSocket, recvbuf, sizeof(article), 0);
 				if (iResult > 0)
 				{
 					recvArticle = *(article*)recvbuf;
