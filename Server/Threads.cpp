@@ -87,7 +87,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 #pragma endregion Otvaranje novog neblokirajuceg listen soketa
 
 	//buffer u koje smjestamo poruke klijenata
-	char recvbuf[sizeof(article)];
+	char recvbuf[sizeof(article) * 100];
 	FD_SET set;
 	timeval timeVal;
 	//za smjestanje povratnih vrijednosti funkcija
@@ -144,33 +144,44 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 		//za svakog pablisera u listi provjeri da li je poslao clanak, ako jeste smjesti ga, na osnovu teme, u odgovarajuci red
 		for (current ; current != NULL; current = current->next)
 		{
-			FD_ZERO(&set);
-			FD_SET(current->clientSocket, &set);
+			do {
+				FD_ZERO(&set);
+				FD_SET(current->clientSocket, &set);
 
-			timeVal.tv_sec = 0;
-			timeVal.tv_usec = 0;
-			iResult = select(0, &set, NULL, NULL, &timeVal);
+				timeVal.tv_sec = 0;
+				timeVal.tv_usec = 0;
+				iResult = select(0, &set, NULL, NULL, &timeVal);
 
-			//ako dodje do greske, vjerovatno je klijent nasilno zatvorio konekciju, izbaci ga iz liste
-			if (iResult == SOCKET_ERROR)
-			{
-				printf("Select failed with error: %d", WSAGetLastError());
-				deleteSocket(&publisherRoot, current->clientSocket);
-			}
-			else if (iResult != 0)
-			{
-				iResult = recv(current->clientSocket, recvbuf, sizeof(article), 0);
-				if (iResult > 0)
+				//ako dodje do greske, vjerovatno je klijent nasilno zatvorio konekciju, izbaci ga iz liste
+				if (iResult == SOCKET_ERROR)
 				{
-					recvArticle = *(article*)recvbuf;
-					int n = atoi(&recvArticle.topic);
-					printf("Publisher %s, sent article with topic %s\n", recvArticle.authorName, giveMeTopic(n));
-					EnterCriticalSection(&qDictionary[n - 1]);
-					enqueue(n, recvArticle);
-					LeaveCriticalSection(&qDictionary[n - 1]);
-					ReleaseSemaphore(sems[n], 1, NULL);
+					printf("Select failed with error: %d", WSAGetLastError());
+					deleteSocket(&publisherRoot, current->clientSocket);
 				}
-			}
+				else if (iResult != 0)
+				{
+					iResult = recv(current->clientSocket, recvbuf, sizeof(article) * 100, 0);
+					if (iResult > 0)
+					{
+						int br = iResult / 123;
+						for (int i = 0; i < br; i++)
+						{
+							recvArticle = *(article*)(recvbuf + i*sizeof(article));
+							char tp[2];
+							tp[0] = recvArticle.topic;
+							tp[1] = '\0';
+							int n = atoi(tp);
+							printf("Publisher %s, sent article with topic %s\n", recvArticle.authorName, giveMeTopic(n));
+							EnterCriticalSection(&qDictionary[n - 1]);
+							if (criticalStopWork())
+								break;
+							enqueue(n, recvArticle);
+							LeaveCriticalSection(&qDictionary[n - 1]);
+							ReleaseSemaphore(sems[n], 1, NULL);
+						}						
+					}
+				}
+			} while (iResult != 0 && iResult != -1);			
 		}
 #pragma endregion Novi clanak
 	}
@@ -517,8 +528,12 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 	#pragma region ciscenje memorije i zatvaranje treda
 
 	//oslobodimo vrijednost u rjecnicima
+	EnterCriticalSection(&qDictionary[tema - 1]);
 	destroyKeyValueQD(tema);
+	LeaveCriticalSection(&qDictionary[tema - 1]);
+	EnterCriticalSection(&lDictionary[tema - 1]);
 	destroyKeyValueLD(tema);
+	LeaveCriticalSection(&lDictionary[tema - 1]);
 
 	//vracamo se u main tred
 	printf("Closing thread for communication with subscribers\n");
