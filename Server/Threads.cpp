@@ -87,7 +87,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 #pragma endregion Otvaranje novog neblokirajuceg listen soketa
 
 	//buffer u koje smjestamo poruke klijenata
-	char recvbuf[sizeof(article) * 100];
+	char recvbuf[sizeof(article) * 1000];
 	FD_SET set;
 	timeval timeVal;
 	//za smjestanje povratnih vrijednosti funkcija
@@ -140,48 +140,48 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 			Sleep(20);
 			continue;
 		}
-
+		char tp[2];
+		tp[1] = '\0';
 		//za svakog pablisera u listi provjeri da li je poslao clanak, ako jeste smjesti ga, na osnovu teme, u odgovarajuci red
 		for (current ; current != NULL; current = current->next)
 		{
-			do {
-				FD_ZERO(&set);
-				FD_SET(current->clientSocket, &set);
+			
+			FD_ZERO(&set);
+			FD_SET(current->clientSocket, &set);
 
-				timeVal.tv_sec = 0;
-				timeVal.tv_usec = 0;
-				iResult = select(0, &set, NULL, NULL, &timeVal);
+			timeVal.tv_sec = 0;
+			timeVal.tv_usec = 0;
+			iResult = select(0, &set, NULL, NULL, &timeVal);
 
-				//ako dodje do greske, vjerovatno je klijent nasilno zatvorio konekciju, izbaci ga iz liste
-				if (iResult == SOCKET_ERROR)
+			//ako dodje do greske, vjerovatno je klijent nasilno zatvorio konekciju, izbaci ga iz liste
+			if (iResult == SOCKET_ERROR)
+			{
+				printf("Select failed with error: %d", WSAGetLastError());
+				deleteSocket(&publisherRoot, current->clientSocket);
+			}
+			else if (iResult != 0)
+			{
+				iResult = recv(current->clientSocket, recvbuf, sizeof(article) * 1000, 0);
+				if (iResult > 0)
 				{
-					printf("Select failed with error: %d", WSAGetLastError());
-					deleteSocket(&publisherRoot, current->clientSocket);
-				}
-				else if (iResult != 0)
-				{
-					iResult = recv(current->clientSocket, recvbuf, sizeof(article) * 100, 0);
-					if (iResult > 0)
+					int br = iResult / 123;
+					for (int i = 0; i < br; i++)
 					{
-						int br = iResult / 123;
-						for (int i = 0; i < br; i++)
-						{
-							recvArticle = *(article*)(recvbuf + i*sizeof(article));
-							char tp[2];
-							tp[0] = recvArticle.topic;
-							tp[1] = '\0';
-							int n = atoi(tp);
-							printf("Publisher %s, sent article with topic %s\n", recvArticle.authorName, giveMeTopic(n));
-							EnterCriticalSection(&qDictionary[n - 1]);
-							if (criticalStopWork())
-								break;
-							enqueue(n, recvArticle);
-							LeaveCriticalSection(&qDictionary[n - 1]);
+						recvArticle = *(article*)(recvbuf + i*sizeof(article));
+						tp[0] = recvArticle.topic;
+						int n = atoi(tp);
+						//printf("Publisher %s, sent article with topic %s\n", recvArticle.authorName, giveMeTopic(n));
+						EnterCriticalSection(&qDictionary[n - 1]);
+						if (criticalStopWork())
+							break;
+						enqueue(n, recvArticle);
+						LeaveCriticalSection(&qDictionary[n - 1]);
+						if(criticalCheckList(n))
 							ReleaseSemaphore(sems[n], 1, NULL);
-						}						
-					}
+					}						
 				}
-			} while (iResult != 0 && iResult != -1);			
+			}
+						
 		}
 #pragma endregion Novi clanak
 	}
@@ -371,7 +371,9 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 						add(n, current->clientSocket);
 						LeaveCriticalSection(&lDictionary[n - 1]);
 						printf("New subscription on topic %s\n", giveMeTopic(n));
-						ReleaseSemaphore(sems[n + 5], 1, NULL);
+
+						if(criticalCheckQueue(n))
+							ReleaseSemaphore(sems[n], 1, NULL);
 					}
 				}
 			}
@@ -415,13 +417,13 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 	//za smjestanje povratnih vrijednosti funkcija
 	int iResult;
 	//semafori na koje cekamo
-	HANDLE semArray[3] = { sems[0], sems[tema], sems[tema + 5] };
+	HANDLE semArray[2] = { sems[0], sems[tema]};
 	printf("Thread with key: %x started\n", tema);
 	while (true)
 	{
 		//cekamo semafor koji nam javlja da ima clanaka za poslati ili semafor koji nam govori da 
 		//tred treba da se ugasi
-		WaitForMultipleObjects(3, semArray, false, INFINITE);
+		WaitForMultipleObjects(2, semArray, false, INFINITE);
 		if (criticalStopWork())
 			break;
 		
@@ -438,8 +440,8 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 		//iteracija kroz clanke koje saljemo
 		for (article art = criticalDequeue(tema); art.topic != '0'; art = criticalDequeue(tema))
 		{
-			printf("\tSending article with authors name: %s to clients\n", art.authorName);
-			printf("\t\tArticle: %s\n", art.text);
+			/*printf("\tSending article with authors name: %s to clients\n", art.authorName);
+			printf("\t\tArticle: %s\n", art.text);*/
 
 			//iteracija kroz sokete i slanje clanaka
 			//for (SocketNode* current = head; current != NULL; current = criticalNext(current, tema))
@@ -494,7 +496,7 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 				//slanje clanka
 				if (iResult >= 1)
 				{
-					printf("Enters here send block\n");
+					//printf("Enters here send block\n");
 					iResult = send(current->clientSocket, (const char*)&art, sizeof(article), 0);
 					if (iResult == SOCKET_ERROR) 
 					{
@@ -589,6 +591,27 @@ const char* giveMeTopic(int c)
 	}
 
 	return "";
+}
+
+int criticalCheckList(char c)
+{
+	int a = 0;
+	EnterCriticalSection(&lDictionary[c - 1]);
+	if (getAllSockets(c) != NULL)
+		a = 1;
+	LeaveCriticalSection(&lDictionary[c - 1]);
+
+	return a;
+}
+
+int criticalCheckQueue(char c)
+{
+	int a = 0;
+	EnterCriticalSection(&qDictionary[c - 1]);
+	a = checkIfQueueEmpty(c);
+	LeaveCriticalSection(&qDictionary[c - 1]);
+
+	return a;
 }
 
 #pragma endregion Pomocne funkcije

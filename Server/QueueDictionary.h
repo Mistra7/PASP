@@ -27,5 +27,7 @@ void enqueue(char key, article value);
 article dequeue(char key);
 //unistava key value par u rjecniku
 void destroyKeyValueQD(char key);
+//provjerava da li postoji clanak u redu
+int checkIfQueueEmpty(char key);
 #pragma endregion funkcije za rad sa rjecnikom
 #pragma once

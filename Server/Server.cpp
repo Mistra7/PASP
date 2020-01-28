@@ -27,7 +27,7 @@ int main()
 	
 	for (int i = 0; i < 10; i++)
 	{
-		sems[i + 1] = CreateSemaphore(0, 0, 150000, NULL);
+		sems[i + 1] = CreateSemaphore(0, 0, 1, NULL);
 
 		if (i < 5)
 		{

@@ -39,6 +39,12 @@ int criticalStopWork();
 
 //vraca naziv teme na osnovu njene brojne protivvrijednosti
 const char* giveMeTopic(int c);
+
+//provjera da li postoje konektovani sabskrajberi
+int criticalCheckList(char c);
+
+//provjera da li postoji clanaka u redu
+int criticalCheckQueue(char c);
 #pragma endregion Pomocne funkcije
 
 #pragma region Tred funkcije

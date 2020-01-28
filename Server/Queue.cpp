@@ -26,7 +26,6 @@ article removeFromQueue(queue* q) {
 	ret.topic = '0';
 
 	if (q->first == NULL) {
-		printf("Queue is empty\n");
 		return ret;
 	}
 

@@ -49,6 +49,16 @@ void enqueue(char key, article value)
 	addToQueue(np->articleQueue, value);
 }
 
+int checkIfQueueEmpty(char key)
+{
+	int a = 0;
+	struct nlist2* np;
+	if ((np = lookup2(key)) != NULL)
+		if (np->articleQueue->first != NULL)
+			a = 1;
+	return a;
+}
+
 article dequeue(char key)
 {
 	article n;
