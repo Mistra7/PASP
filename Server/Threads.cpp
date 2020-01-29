@@ -87,7 +87,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 #pragma endregion Otvaranje novog neblokirajuceg listen soketa
 
 	//buffer u koje smjestamo poruke klijenata
-	char recvbuf[sizeof(article) * 1000];
+	char recvbuf[sizeof(article)];
 	FD_SET set;
 	timeval timeVal;
 	//za smjestanje povratnih vrijednosti funkcija
@@ -161,13 +161,13 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 			}
 			else if (iResult != 0)
 			{
-				iResult = recv(current->clientSocket, recvbuf, sizeof(article) * 1000, 0);
+				iResult = recv(current->clientSocket, recvbuf, sizeof(article), 0);
 				if (iResult > 0)
 				{
-					int br = iResult / 123;
+					/*int br = iResult / sizeof(article);
 					for (int i = 0; i < br; i++)
-					{
-						recvArticle = *(article*)(recvbuf + i*sizeof(article));
+					{*/
+						recvArticle = *(article*)recvbuf;
 						tp[0] = recvArticle.topic;
 						int n = atoi(tp);
 						//printf("Publisher %s, sent article with topic %s\n", recvArticle.authorName, giveMeTopic(n));
@@ -178,7 +178,12 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 						LeaveCriticalSection(&qDictionary[n - 1]);
 						if(criticalCheckList(n))
 							ReleaseSemaphore(sems[n], 1, NULL);
-					}						
+					//}						
+				}
+				else
+				{
+					closesocket(current->clientSocket);
+					deleteSocket(&publisherRoot, current->clientSocket);
 				}
 			}
 						
