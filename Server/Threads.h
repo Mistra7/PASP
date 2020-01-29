@@ -17,7 +17,7 @@ extern int stopWork;
 //sems[0] javlja kada je kraj rada (koristi se samo za helpSubscribers tredove)
 //sems[1-5] javlju da je ubacen uclanak u red
 //sems[6-10] javljaju da je stigao novi sabskrajber
-extern HANDLE sems[6];
+extern HANDLE sems[11];
 
 //kriticne sekcije
 //stopWorkCS za mjenjanje i citanje zajednicke promjenljive stopWork

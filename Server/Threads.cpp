@@ -25,6 +25,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 	addrinfo hints;
 
 	memset(&hints, 0, sizeof(hints));
+
 	hints.ai_family = AF_INET;       // IPv4 address
 	hints.ai_socktype = SOCK_STREAM; // Provide reliable data streaming
 	hints.ai_protocol = IPPROTO_TCP; // Use TCP protocol
@@ -94,7 +95,6 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 	//clanak koji dobijamo od klijenta
 	struct article recvArticle;
 	printf("help Publishers started!\n");
-
 	//opsluzivanje pablisera
 	while (true)
 	{
@@ -152,7 +152,8 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 			timeVal.tv_sec = 0;
 			timeVal.tv_usec = 0;
 			iResult = select(0, &set, NULL, NULL, &timeVal);
-
+			char helpBuffer[sizeof(article) * 100] = "";
+			int a;
 			//ako dodje do greske, vjerovatno je klijent nasilno zatvorio konekciju, izbaci ga iz liste
 			if (iResult == SOCKET_ERROR)
 			{
@@ -161,24 +162,25 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 			}
 			else if (iResult != 0)
 			{
-				iResult = recv(current->clientSocket, recvbuf, sizeof(article), 0);
-				if (iResult > 0)
+				iResult = 0;
+				do {
+					a = recv(current->clientSocket, recvbuf + iResult, sizeof(article) - iResult, 0);
+					iResult += a;
+				} while (iResult != sizeof(article) && a > 0);
+
+				if (iResult == sizeof(article))
 				{
-					/*int br = iResult / sizeof(article);
-					for (int i = 0; i < br; i++)
-					{*/
-						recvArticle = *(article*)recvbuf;
-						tp[0] = recvArticle.topic;
-						int n = atoi(tp);
-						//printf("Publisher %s, sent article with topic %s\n", recvArticle.authorName, giveMeTopic(n));
-						EnterCriticalSection(&qDictionary[n - 1]);
-						if (criticalStopWork())
-							break;
-						enqueue(n, recvArticle);
-						LeaveCriticalSection(&qDictionary[n - 1]);
-						if(criticalCheckList(n))
-							ReleaseSemaphore(sems[n], 1, NULL);
-					//}						
+					recvArticle = *(article*)recvbuf;
+					tp[0] = recvArticle.topic;
+					int n = atoi(tp);
+
+					EnterCriticalSection(&qDictionary[n - 1]);
+					if (criticalStopWork())
+						break;
+					enqueue(n, recvArticle);
+					LeaveCriticalSection(&qDictionary[n - 1]);
+					if (criticalCheckList(n))
+						ReleaseSemaphore(sems[n], 1, NULL);
 				}
 				else
 				{

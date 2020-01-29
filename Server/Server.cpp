@@ -9,7 +9,7 @@
 bool InitializeWindowsSockets();
 int stopWork = 0;
 CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
-HANDLE sems[6];
+HANDLE sems[11];
 
 int main()
 {
@@ -25,11 +25,17 @@ int main()
 	InitializeCriticalSection(&pubList);
 	sems[0] = CreateSemaphore(0, 0, 5, NULL);
 	
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		sems[i + 1] = CreateSemaphore(0, 0, 1, NULL);
-		InitializeCriticalSection(&lDictionary[i]);
-		InitializeCriticalSection(&qDictionary[i]);
+
+		if (i < 5)
+		{
+			InitializeCriticalSection(&lDictionary[i]);
+			InitializeCriticalSection(&qDictionary[i]);
+		}
+		
+		
 	}
 #pragma endregion inicijalizacija semafora i kriticnih sekcija
 
@@ -69,7 +75,7 @@ int main()
 	ReleaseSemaphore(sems[0], 5, NULL);
 	WaitForMultipleObjects(7, array2, true, INFINITE);
 
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 11; i++)
 	{
 		if(i < 7)
 			CloseHandle(array2[i]);
