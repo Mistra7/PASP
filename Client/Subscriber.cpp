@@ -90,7 +90,7 @@ void DisplayPosts(node** posts) {
         for (int i = 0; i < postCnt; i++)
         {
             printArticle(*(article*)ElementAt(*posts, i));
-            printf("---------------------------------------------");
+            printf("---------------------------------------------\n");
         }
         ClearList(posts);
     }

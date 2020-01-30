@@ -48,6 +48,7 @@ int __cdecl main(int argc, char** argv)
     char text[TEXT_LEN];
 	int brClanaka;
 	int odabir;
+    article clanci[1500];
 
 	printf("Odaberi broj clanaka;\n");
 	printf("\t1. 500\n");
@@ -70,7 +71,7 @@ int __cdecl main(int argc, char** argv)
 		brClanaka = 500;
 		break;
 	}
-
+    
     //user_type type;
     u_short port;
     char author[AUTHOR_LEN] = "";
@@ -129,22 +130,26 @@ int __cdecl main(int argc, char** argv)
 	char lit = getchar();
 	lit = getchar();
 
+    for (int i = 0; i < brClanaka; i++)
+    {
+        strcpy_s(clanci[i].authorName, author);
+        clanci[i].topic = rand_char();
+        strcpy_s(clanci[i].text, rand_string(clanci[i].text, TEXT_LEN));
+    }
+
     while (1) {
 		for (int i = 0; i < brClanaka; i++)
 		{
-			int message_length = 0;
-			article a;
-			a.topic = rand_char();
-			strcpy_s(a.authorName, author);
-			strcpy_s(a.text, rand_string(a.text, TEXT_LEN));
+			//int message_length = 0;
 			//article a = createArticle(author);
-			message_length = sizeof(a);
-			memcpy(messageToSend, &a, message_length);
+			//message_length = sizeof(clanci[i]);
+			//memcpy(messageToSend, (i * sizeof(article)) + clanci, message_length);
 
-			if (message_length > 0) {
-				Send(serverSocket, messageToSend, message_length, &exit);
-			}
+			//if (message_length > 0) {
+			Send(serverSocket, (char*)(&clanci[i]) , sizeof(article), &exit);
+			//}
 		}
+        //Send(serverSocket, (char*)clanci, sizeof(article) * brClanaka, &exit);
         
 		Sleep(100);
     }
