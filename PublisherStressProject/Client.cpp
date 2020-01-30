@@ -44,7 +44,7 @@ CRITICAL_SECTION list_cs, exit_cs;
 int __cdecl main(int argc, char** argv)
 {
     // message to send
-    char messageToSend[DEFAULT_BUFLEN] = "";
+    char messageToSend[sizeof(article)] = "";
     char text[TEXT_LEN];
 	int brClanaka;
 	int odabir;
@@ -136,11 +136,10 @@ int __cdecl main(int argc, char** argv)
 			article a;
 			a.topic = rand_char();
 			strcpy_s(a.authorName, author);
-			strcpy_s(a.text, rand_string(a.text, 20));
+			strcpy_s(a.text, rand_string(a.text, TEXT_LEN));
 			//article a = createArticle(author);
 			message_length = sizeof(a);
 			memcpy(messageToSend, &a, message_length);
-
 
 			if (message_length > 0) {
 				Send(serverSocket, messageToSend, message_length, &exit);
@@ -169,9 +168,9 @@ void Send(SOCKET socket, char* messageToSend, int length, bool* exit)
     if (iResult == SOCKET_ERROR)
     {
         printf("send failed with error: %d\n", WSAGetLastError());
-        EnterCriticalSection(&exit_cs);
+        /*EnterCriticalSection(&exit_cs);
         *exit = true;
-        LeaveCriticalSection(&exit_cs);
+        LeaveCriticalSection(&exit_cs);*/
     }
     else {
         printf("Bytes Sent: %ld\n", iResult);
