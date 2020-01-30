@@ -160,7 +160,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 				printf("Select failed with error: %d", WSAGetLastError());
 				deleteSocket(&publisherRoot, current->clientSocket);
 			}
-			else if (iResult != 0)
+			else if (iResult == 1)
 			{
 				iResult = 0;
 				do {
@@ -173,7 +173,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 					recvArticle = *(article*)recvbuf;
 					tp[0] = recvArticle.topic;
 					int n = atoi(tp);
-
+					printf("Received article with topic %s, from author %s\n", giveMeTopic(recvArticle.topic), recvArticle.authorName);
 					EnterCriticalSection(&qDictionary[n - 1]);
 					if (criticalStopWork())
 						break;
@@ -184,10 +184,10 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 				}
 				else
 				{
-					printf("Publisher error\n");
 					closesocket(current->clientSocket);
 					deleteSocket(&publisherRoot, current->clientSocket);
 				}
+				
 			}
 						
 		}
@@ -205,9 +205,8 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 		if (iResult == SOCKET_ERROR)
 		{
 			printf("shutdown failed with error: %d\n", WSAGetLastError());
-			closesocket(current->clientSocket);
-			WSACleanup();
 		}
+		closesocket(current->clientSocket);
 	}
 	deleteList(&publisherRoot);
 	closesocket(listenForPublishersSocket);
@@ -394,6 +393,7 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 #pragma region ciscenje memorije i zatvaranje treda
 
 	SocketNode* current = subList;
+	
 	//gasenje klijenata
 	for (current; current != NULL; current = current->next)
 	{
@@ -402,10 +402,8 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 		if (iResult == SOCKET_ERROR)
 		{
 			printf("shutdown failed with error: %d\n", WSAGetLastError());
-			closesocket(current->clientSocket);
-			WSACleanup();
-			return 1;
 		}
+		closesocket(current->clientSocket);
 	}
 
 
@@ -448,6 +446,8 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 		//iteracija kroz clanke koje saljemo
 		for (article art = criticalDequeue(tema); art.topic != '0'; art = criticalDequeue(tema))
 		{
+			if (criticalStopWork())
+				break;
 			/*printf("\tSending article with authors name: %s to clients\n", art.authorName);
 			printf("\t\tArticle: %s\n", art.text);*/
 
@@ -462,49 +462,38 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 				timeval timeVal;
 
 				//provjeravamo da li mozemo klijentu da posaljemo clanak
-				do {
-					// Set timeouts to zero since we want select to return
-					// instantaneously
-					timeVal.tv_sec = 0;
-					timeVal.tv_usec = 0;
-					FD_ZERO(&set);
-					// Add socket we will wait to read from
-					FD_SET(current->clientSocket, &set);
+				// Set timeouts to zero since we want select to return
+				// instantaneously
+				timeVal.tv_sec = 0;
+				timeVal.tv_usec = 0;
+				FD_ZERO(&set);
+				// Add socket we will wait to read from
+				FD_SET(current->clientSocket, &set);
 
-					iResult = select(0, NULL, &set, NULL, &timeVal);
+				iResult = select(0, NULL, &set, NULL, &timeVal);
 
-					// lets check if there was an error during select
-					if (iResult == SOCKET_ERROR)
+				// lets check if there was an error during select
+				if (iResult == SOCKET_ERROR)
+				{
+					if (listLenght(current) == 1)
 					{
-						if (listLenght(current) == 1)
-						{
-							EnterCriticalSection(&qDictionary[tema - 1]);
-							enqueue(tema, art);
-							LeaveCriticalSection(&qDictionary[tema - 1]);
-							breakSending = 1;
-						}
-						printf("Client canceled connection\n");
-						temp = current;
-						current = current->next;
-						EnterCriticalSection(&lDictionary[tema - 1]);
-						removeValue(tema, temp->clientSocket);
-						LeaveCriticalSection(&lDictionary[tema - 1]);
-						break;
+						EnterCriticalSection(&qDictionary[tema - 1]);
+						enqueue(tema, art);
+						LeaveCriticalSection(&qDictionary[tema - 1]);
+						breakSending = 1;
 					}
-
-					// now, lets check if there are any sockets ready
-					if (iResult == 0)
-					{
-						// there are no ready sockets, sleep for a while and check again
-						Sleep(10);
-						continue;
-					}
-				} while (iResult < 1);
+					printf("Client canceled connection\n");
+					temp = current;
+					current = current->next;
+					EnterCriticalSection(&lDictionary[tema - 1]);
+					removeValue(tema, temp->clientSocket);
+					LeaveCriticalSection(&lDictionary[tema - 1]);
+					continue;
+				}
 				
 				//slanje clanka
 				if (iResult >= 1)
 				{
-					//printf("Enters here send block\n");
 					iResult = send(current->clientSocket, (const char*)&art, sizeof(article), 0);
 					if (iResult == SOCKET_ERROR) 
 					{
@@ -515,8 +504,19 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 							LeaveCriticalSection(&qDictionary[tema - 1]);
 							breakSending = 1;
 						}
-						fprintf(stderr, "send to subscribers failed with error: %ld\n", WSAGetLastError());
+						int error = WSAGetLastError();
+						fprintf(stderr, "send to subscribers failed with error: %ld\n", error);
+						if (error == 10035)
+							continue;
 						//ako je doslo do greske, pretpostavljamo da klijent prekinuo konekciju te izbacujemo njegov soket
+						temp = current;
+						current = current->next;
+						EnterCriticalSection(&lDictionary[tema - 1]);
+						removeValue(tema, temp->clientSocket);
+						LeaveCriticalSection(&lDictionary[tema - 1]);
+					}
+					else if (iResult == 0)
+					{
 						temp = current;
 						current = current->next;
 						EnterCriticalSection(&lDictionary[tema - 1]);
