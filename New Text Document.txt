@@ -1,0 +1,11 @@
+Podici 3 pablisera i 3 sabskrajbera. Sabovi trebaju da budu sabovani na sledeci nacine: 1 na 5, 1 na 3 i 1 na 1- random.
+Pabliseri na svakih 0.1s salju 500 random poruka. 
+
+Podici 6 pablisera i 4 sabskrajbera. Sabovi trebaju da budu sabovani na sledeci nacine: 1 na 5, 1 na 2, 1 na 3 i 1 na 1- 
+random.
+Pabliseri na svakih 0.1s salju 1000 random poruka. 
+
+Podici 9 pablisera i 4 sabskrajbera. Sabovi trebaju da budu sabovani na sledeci nacine: 1 na 5, 1 na 2, 1 na 3 i 1 na 1- 
+random.
+Pabliseri na svakih 0.1s salju 1500 random poruka.
+
