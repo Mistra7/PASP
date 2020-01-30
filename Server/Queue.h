@@ -19,10 +19,26 @@ struct queue {
 #pragma endregion strukture
 
 #pragma region funkcije za rad sa redom
-//dodajemo clanak u red
+/*
+opis: dodajemo clanak u red
+parametri: pokazivac na red u koji dodajemo, clanak koji ubacujemo
+povratna vrijednost: nema
+*/
 void addToQueue(queue* q, article value);
-//vadimo clanak iz reda i oslobadajmo njegovu memoriju
+
+
+/*
+opis: vadi prvi clanak iz reda i oslobadja njegovu memoriju
+paremtar: pokazivac na red iz kojeg vadimo
+povratna vrijednost: clanak
+*/
 article removeFromQueue(queue* q);
+
 //inicijalizacija reda
+/*
+opis: inicijalizacija reda
+parametar: pokazivac na red
+povratna vrijednost: nema
+*/
 void InitQ(queue* q);
 #pragma endregion funkcije za rad sa redom

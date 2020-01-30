@@ -9,16 +9,45 @@ typedef struct SocketNode {
 }SocketNode;
 
 #pragma region funkcije za rad sa listom
-//ubacuje soket u listu, ako lista ne postoji, kreira je
+/*
+opis: ubacuje soket u listu, ako lista ne postoji, kreira je
+parametri: pokazivac na prvi element liste, soket koji ubacujemo
+//povratna vrijednost: nema
+*/
 void addSocket(SocketNode** root, SOCKET s);
-//brise soket iz liste i prevezuje je
+
+/*
+opis: brise soket iz liste, oslobadja njegovu memoriju i prevezuje je
+parametri: pokazivac na prvi element liste, soket koji izbacujemo
+povratna vrijednost: nema
+*/
 void deleteSocket(SocketNode** root, SOCKET s);
-//provjearava da li postoji soket u listi
+
+/*
+opis: provjearava da li postoji soket u listi
+parametri: pokazivac na prvi element liste, soket koji provjeravamo
+povratna vrijednost: 0 (ne postoji) ili 1 (postoji)
+*/
 int checkIfExists(SocketNode** root, SOCKET s);
-//vraca sledeci iz liste
+
+/*
+opis: vraca sledeci iz liste
+parametri: trenutni element
+povratna vrijednost: sledeci node
+*/
 SocketNode* getNext(SocketNode** root);
-//brise citavu listu
+
+/*
+opis: brise citavu listu
+parametri: prvi elemnt liste
+povratna vrijednost: nema
+*/
 void deleteList(SocketNode** root);
-//broj elemenata u listu
+
+/*
+opis: broj elemenata u listu
+parametri: prvi elemnt liste
+povratna vrijednost: broj elemenata
+*/
 int listLenght(SocketNode* root);
 #pragma endregion funkcije za rad sa listom
