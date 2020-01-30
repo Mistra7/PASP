@@ -17,14 +17,6 @@ Za oznacavanje tipa korisnika
 enum user_type { PUBLISHER, SUBSCRIBER };
 
 /*
-Opis: Za proveru da li je doslo do nekog dogadjaja na soketu
-Param: Soket nad kojim se ocekuje neki dogadjaj 
-i bool od kog zavisi rezim select-a (true za pisanje na soket, false za citanje)
-Povratni: Nema
-*/
-void Select(SOCKET, bool);
-
-/*
 Opis: Omogucava izbor topic-a
 Param: Nema
 Povratni: Izabran topic

@@ -5,6 +5,7 @@
 #include "ReceiveThread.h"
 #include "Publisher.h"
 #include "Subscriber.h"
+#include "../Common/Select.h"
 
 //Port na koji se publisher-i javljaju, za klijente je veci za jedan
 #define DEFAULT_PORT 20000
