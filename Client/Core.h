@@ -9,7 +9,7 @@
 #include "../Common/Structs.h"
 
 //Duzina bafera koji se salje preko mreze
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 123
 
 /*
 Za oznacavanje tipa korisnika
