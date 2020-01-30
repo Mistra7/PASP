@@ -184,6 +184,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 				}
 				else
 				{
+					printf("Publisher error\n");
 					closesocket(current->clientSocket);
 					deleteSocket(&publisherRoot, current->clientSocket);
 				}
@@ -514,7 +515,7 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 							LeaveCriticalSection(&qDictionary[tema - 1]);
 							breakSending = 1;
 						}
-						fprintf(stderr, "send failed with error: %ld\n", WSAGetLastError());
+						fprintf(stderr, "send to subscribers failed with error: %ld\n", WSAGetLastError());
 						//ako je doslo do greske, pretpostavljamo da klijent prekinuo konekciju te izbacujemo njegov soket
 						temp = current;
 						current = current->next;
