@@ -31,7 +31,7 @@ lDictionary za rad sa rjecnicima u kojema se nalaze liste klijentskih(sabskrajbe
 qDictionary za rad sa rjecnicima u kojema se nalaze redovi sa clancima
 pubList za rad sa listom klijentskih(pabliseri) soketa
 */
-extern CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
+extern CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5];
 #pragma endregion Externe promjenljive
 
 #pragma region Pomocne funkcije

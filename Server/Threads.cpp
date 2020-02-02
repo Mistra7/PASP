@@ -125,18 +125,14 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 			else
 			{
 				printf("\tPublisher connected!\n");
-				EnterCriticalSection(&pubList);
 				addSocket(&publisherRoot, acceptedSocket);
-				LeaveCriticalSection(&pubList);
 			}
 		}
 #pragma endregion Nova konekcija
 			
 #pragma region Novi clanak
 		//ako je lista soketa pablisera prazna, odmori sekundu
-		EnterCriticalSection(&pubList);
-		SocketNode* current = publisherRoot;
-		LeaveCriticalSection(&pubList);
+		SocketNode* current = publisherRoot;;
 		if (current == NULL)
 		{
 			Sleep(20);
@@ -196,8 +192,6 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 				int n = atoi(tp);
 				printf("Received article with topic %s, from author %s\n", giveMeTopic(n), recvArticle.authorName);
 				EnterCriticalSection(&qDictionary[n - 1]);
-				if (criticalStopWork())
-					break;
 				enqueue(n, recvArticle);
 				LeaveCriticalSection(&qDictionary[n - 1]);
 				if (criticalCheckList(n))

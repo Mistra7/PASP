@@ -8,7 +8,7 @@
 
 bool InitializeWindowsSockets();
 int stopWork = 0;
-CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5], pubList;
+CRITICAL_SECTION stopWorkCS, lDictionary[5], qDictionary[5];
 HANDLE sems[6];
 
 int main()
@@ -22,7 +22,6 @@ int main()
 
 	#pragma region inicijalizacija semafora i kriticnih sekcija
 	InitializeCriticalSection(&stopWorkCS);
-	InitializeCriticalSection(&pubList);
 	sems[0] = CreateSemaphore(0, 0, 5, NULL);
 	
 	for (int i = 0; i < 5; i++)
@@ -81,7 +80,6 @@ int main()
 		}
 	}
 	DeleteCriticalSection(&stopWorkCS);
-	DeleteCriticalSection(&pubList);
 
 	WSACleanup();
 	#pragma endregion zatvaranje programa i klinap
