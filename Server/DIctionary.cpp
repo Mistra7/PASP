@@ -11,13 +11,14 @@ struct nlist* lookup(char s)
 {
 	struct nlist *returnValue;
 
-	for (returnValue = hashTab[hash(s)]; returnValue != NULL; returnValue = returnValue->next)
+	returnValue = hashTab[hash(s)];
+	if (returnValue != NULL)
 	{
 		if (returnValue->key == s)
 		{
 			return returnValue;
 		}
-	}
+	}	
 
 	return NULL;
 }
@@ -71,10 +72,17 @@ void destroyKeyValueLD(char key)
 		return;
 
 	SocketNode* current = np->clientSockets;
-	SocketNode* temp = NULL;
-	deleteList(&(np->clientSockets));
+	deleteList(&(np->clientSockets));	
 
-	np->next = NULL;
 	free(np);
 	
 }
+
+//void destroyDictionary(char key)
+//{
+//	struct nlist* np = lookup(key);
+//
+//	if (np == NULL)
+//		return;
+//
+//}

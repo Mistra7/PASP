@@ -87,6 +87,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 	printf("Publisher listening socket initialized!\n");
 #pragma endregion Otvaranje novog neblokirajuceg listen soketa
 
+	HANDLE *waitThreads = (HANDLE*)lpParam;
 	//buffer u koje smjestamo poruke klijenata
 	char recvbuf[sizeof(article)];
 	FD_SET set;
@@ -211,6 +212,7 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 
 	
 #pragma region ciscenje memorije i zatvaranje treda
+	
 	SocketNode* current = publisherRoot;
 
 	for (current; current != NULL; current = current->next)
@@ -225,6 +227,8 @@ DWORD WINAPI helpPublishers(LPVOID lpParam)
 	}
 	deleteList(&publisherRoot);
 	closesocket(listenForPublishersSocket);
+
+	WaitForMultipleObjects(5, waitThreads, true, INFINITE);
 
 	for (int i = 0; i < 5; i++)
 	{
@@ -320,7 +324,7 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 	printf("Subscribers listening socket initialize!\n");
 
 	#pragma endregion Pokretanje neblokirajuceg listen soketa
-
+	HANDLE* waitThreads = (HANDLE*)lpParam;
 	while (true)
 	{
 		//provjera da li je mejn javio da se program gasi
@@ -412,7 +416,7 @@ DWORD WINAPI listenForSubscribers(LPVOID lpParam)
 
 
 #pragma region ciscenje memorije i zatvaranje treda
-
+	WaitForMultipleObjects(5, waitThreads, true, INFINITE);
 	SocketNode* current = subList;
 	
 	//gasenje klijenata
@@ -473,8 +477,6 @@ DWORD WINAPI helpSubscribers(LPVOID lpParam)
 		//iteracija kroz clanke koje saljemo
 		for (article art = criticalDequeue(tema); art.topic != '0'; art = criticalDequeue(tema))
 		{
-			if (criticalStopWork())
-				break;
 			/*printf("\tSending article with authors name: %s to clients\n", art.authorName);
 			printf("\t\tArticle: %s\n", art.text);*/
 
