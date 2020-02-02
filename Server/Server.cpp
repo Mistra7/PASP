@@ -48,13 +48,14 @@ int main()
 	char tema5 = 0x05;
 
 	//listenPublishers = CreateThread(NULL, 0, &listenForPublishers, NULL, 0, &listenPublishersID);
-	listenSubscribres = CreateThread(NULL, 0, &listenForSubscribers, NULL, 0, &listenSubscribresID);
-	helpPub = CreateThread(NULL, 0, &helpPublishers, NULL, 0, &helpPublishersID);
 	subGames = CreateThread(NULL, 0, &helpSubscribers, &tema1, 0, &subGamesID);
 	subTehnology = CreateThread(NULL, 0, &helpSubscribers, &tema2, 0, &subTehnologyID);
 	subMemes = CreateThread(NULL, 0, &helpSubscribers, &tema3, 0, &subMemesID);
 	subCelebs = CreateThread(NULL, 0, &helpSubscribers, &tema4, 0, &subCelebsID);
 	subSport = CreateThread(NULL, 0, &helpSubscribers, &tema5, 0, &subSportID);
+	HANDLE waitForThreads[5] = { subGames, subTehnology, subMemes, subCelebs, subSport };
+	listenSubscribres = CreateThread(NULL, 0, &listenForSubscribers, &waitForThreads, 0, &listenSubscribresID);
+	helpPub = CreateThread(NULL, 0, &helpPublishers, &waitForThreads, 0, &helpPublishersID);
 	#pragma endregion inicijalizacija tredova
 
 	#pragma region zatvaranje programa i klinap

@@ -11,13 +11,15 @@ struct nlist2* lookup2(char s)
 {
 	struct nlist2* returnValue;
 
-	for (returnValue = hashTab2[hash2(s)]; returnValue != NULL; returnValue = returnValue->next)
+	returnValue = hashTab2[hash2(s)];
+	if (returnValue != NULL)
 	{
 		if (returnValue->key == s)
 		{
 			return returnValue;
 		}
 	}
+	
 
 	return NULL;
 }

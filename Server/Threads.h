@@ -8,6 +8,13 @@
 #include "Dictionary.h"
 
 
+#pragma region pomocna struktura
+
+//typedef struct threadParameter {
+//	HANDLE waitForThreads[5];
+//}tp;
+#pragma endregion pomocna struktura
+
 #pragma region Externe promjenljive
 /*
 opis: zajednicka promjenljiva za mejn tred i helpSubscribers tredove
