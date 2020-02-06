@@ -85,6 +85,6 @@ void destroyKeyValueQD(char key)
 	{
 	}
 
+	free(np->articleQueue);
 	free(np);
-
 }
